@@ -1,0 +1,18 @@
+{
+  "kind": "collectionType",
+  "collectionName": "chatbots",
+  "info": {
+    "singularName": "chatbot",
+    "pluralName": "chatbots",
+    "displayName": "Chatbot"
+  },
+  "options": {
+    "draftAndPublish": false,
+    "private": true
+  },
+  "attributes": {
+    "placeholder": {
+      "type": "string"
+    }
+  }
+}
