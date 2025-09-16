@@ -1,0 +1,10 @@
+module.exports = {
+  routes: [
+    {
+      method: 'GET',
+      path: '/ping',
+      handler: 'ping.ping',
+      config: { auth: false },
+    },
+  ],
+};

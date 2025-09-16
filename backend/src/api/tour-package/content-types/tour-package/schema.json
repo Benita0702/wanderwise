@@ -1,0 +1,71 @@
+{
+  "kind": "collectionType",
+  "collectionName": "tour_packages",
+  "info": {
+    "singularName": "tour-package",
+    "pluralName": "tour-packages",
+    "displayName": "Tour Package"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "Title": {
+      "type": "string"
+    },
+    "Slug": {
+      "type": "uid",
+      "targetField": "Title"
+    },
+    "Description": {
+      "type": "blocks"
+    },
+    "Price": {
+      "type": "decimal"
+    },
+    "Duration_days": {
+      "type": "integer"
+    },
+    "Package_type": {
+      "type": "enumeration",
+      "enum": [
+        "Weekend",
+        "Honeymoon",
+        "Luxury",
+        "Adventure"
+      ]
+    },
+    "Itinerary": {
+      "type": "blocks"
+    },
+    "Images": {
+      "type": "media",
+      "multiple": true,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "Inclusions": {
+      "type": "text"
+    },
+    "Exclusions": {
+      "type": "text"
+    },
+    "bookings": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::booking.booking",
+      "mappedBy": "tour_package"
+    },
+    "user_profiles": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::user-profile.user-profile",
+      "mappedBy": "wishlists"
+    }
+  }
+}

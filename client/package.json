@@ -7,9 +7,21 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2",
+    "axios": "^1.11.0",
+    "framer-motion": "^12.23.12",
+    "js-cookie": "^3.0.5",
+    "jspdf": "^3.0.2",
+    "lucide-react": "^0.544.0",
+    "razorpay": "^2.9.6",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-router-dom": "^7.8.2",
     "react-scripts": "5.0.1",
+    "react-slick": "^0.31.0",
+    "recharts": "^3.2.0",
+    "slick-carousel": "^1.8.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -35,5 +47,13 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "resolutions": {
+    "tailwindcss": "npm:@tailwindcss/postcss7-compat@2.2.17"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17"
   }
 }

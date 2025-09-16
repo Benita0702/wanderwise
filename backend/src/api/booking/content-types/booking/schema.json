@@ -1,0 +1,47 @@
+{
+  "kind": "collectionType",
+  "collectionName": "bookings",
+  "info": {
+    "singularName": "booking",
+    "pluralName": "bookings",
+    "displayName": "Booking"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "User_email": {
+      "type": "email"
+    },
+    "tour_package": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::tour-package.tour-package",
+      "inversedBy": "bookings"
+    },
+    "Travelers_count": {
+      "type": "integer"
+    },
+    "Start_date": {
+      "type": "date"
+    },
+    "Add_ons": {
+      "type": "json"
+    },
+    "Total_price": {
+      "type": "integer"
+    },
+    "Booking_status": {
+      "type": "enumeration",
+      "enum": [
+        "Pending",
+        "Confirmed",
+        "Cancelled"
+      ]
+    },
+    "User_name": {
+      "type": "string"
+    }
+  }
+}
