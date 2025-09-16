@@ -22,6 +22,7 @@ export default factories.createCoreController('api::itinerary.itinerary', ({ str
           id: user.id,
         },
       },
+      limit: 100
     });
 
     // Sanitize and transform the response
