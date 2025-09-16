@@ -219,7 +219,7 @@ const handleSave = async () => {
         travelerType: plannerData.travelerType,
         preferences: plannerData.preferences,
         activities: itinerary,
-        user: user.id,
+        // user: user.id,
       }
     };
 
