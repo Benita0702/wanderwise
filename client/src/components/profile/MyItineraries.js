@@ -1,88 +1,77 @@
-// src/components/profile/MyItineraries.js
 import React, { useEffect, useState, useContext } from "react";
-import { AuthContext } from "../../context/AuthContext";   // ✅ inside src
-import { fetchItinerariesForUser } from "../../api/itineraries";  // ✅ inside src
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import api from "../../api"; // Make sure this path is correct
+import { AuthContext } from "../../context/AuthContext"; // Make sure this path is correct
 
-
-export default function MyItineraries() {
-  const { user, token } = useContext(AuthContext);
+function MyItineraries() {
   const [itineraries, setItineraries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    const load = async () => {
+    const fetchItineraries = async () => {
       if (!user) {
-        setItineraries([]);
         setLoading(false);
         return;
       }
-      setLoading(true);
       try {
-        const data = await fetchItinerariesForUser(user.id, token);
-
-        // ✅ Flatten Strapi data safely
-        const cleaned = data.map((it) => ({
-          id: it.id,
-          title: it.title,
-          destination: it.destination,
-          startDate: it.startDate,
-          endDate: it.endDate,
-        }));
-
-        setItineraries(cleaned);
+        // This is the updated API call to our new custom route
+        const response = await api.get("/itineraries/my-itineraries");
+        setItineraries(response.data.data || response.data); // Handle both Strapi v3 and v4 response structures
       } catch (err) {
-        console.error("Failed to load itineraries", err);
+        console.error("Error fetching itineraries:", err);
       } finally {
         setLoading(false);
       }
     };
-    load();
-  }, [user, token]);
 
-  if (loading) return <div className="p-6">Loading your itineraries...</div>;
-  if (!user)
-    return <div className="p-6">Please login to view your itineraries.</div>;
+    fetchItineraries();
+  }, [user]);
+
+  if (loading) return <p className="text-center mt-8">Loading your itineraries...</p>;
+
+  if (!itineraries.length) {
+    return (
+      <div className="text-center mt-8">
+        <p>You haven't created any itineraries yet.</p>
+        <Link to="/planner" className="text-blue-600 hover:underline">
+          Create a new itinerary
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-4">My Itineraries</h2>
-      {itineraries.length === 0 ? (
-        <div>No saved itineraries yet.</div>
-      ) : (
-        <div className="space-y-4">
-          {itineraries.map((it) => (
-            <div key={it.id} className="border rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    {it.title || "Untitled"}
-                  </h3>
-                  <p className="text-gray-600">
-                    {it.destination || "Unknown"} —{" "}
-                    {it.startDate
-                      ? new Date(it.startDate).toLocaleDateString()
-                      : "?"}{" "}
-                    to{" "}
-                    {it.endDate
-                      ? new Date(it.endDate).toLocaleDateString()
-                      : "?"}
-                  </p>
-                </div>
-                <div className="space-x-2">
-                  <button
-                    onClick={() => navigate(`/itinerary/${it.id}`)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded"
-                  >
-                    Open
-                  </button>
-                </div>
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+      <h1 className="text-3xl font-bold mb-6">My Itineraries</h1>
+      <div className="grid gap-6">
+        {itineraries.map((itinerary) => {
+          // Destructure attributes for easier access
+          const { title, destination, startDate, endDate } = itinerary.attributes || itinerary;
+          return (
+            <div
+              key={itinerary.id}
+              className="bg-white shadow-md rounded-lg p-6 hover:shadow-lg transition-shadow"
+            >
+              <h2 className="text-2xl font-semibold mb-2">{title}</h2>
+              <p className="text-gray-600 mb-4">
+                {destination} | {new Date(startDate).toLocaleDateString()} -{" "}
+                {new Date(endDate).toLocaleDateString()}
+              </p>
+              <div className="flex justify-end">
+                <Link
+                  to={`/itinerary/${itinerary.id}`}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  View Details
+                </Link>
               </div>
             </div>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }
+
+export default MyItineraries;

@@ -15,6 +15,8 @@ import ActivityCard from '../components/ActivityCard';
 import { AuthContext } from '../context/AuthContext';
 import { createItinerary } from '../api/itineraries';
 import { useNavigate } from 'react-router-dom';
+import api from '../api'; // Make sure you import the main api instance
+
 
 // Sample activities
 const sampleActivities = {
@@ -209,28 +211,29 @@ const handleSave = async () => {
     }
 
     const payload = {
-      title: `${plannerData.destinations[0] || "Itinerary"} - ${plannerData.startDate}`,
-      destination: plannerData.destinations[0],
-      startDate: plannerData.startDate,
-      endDate: plannerData.endDate,
-      travelerType: plannerData.travelerType,
-      preferences: plannerData.preferences,
-      activities: itinerary,
-      user: user.id,
+      data: { // Strapi v4 requires the payload to be wrapped in a `data` object
+        title: `${plannerData.destinations[0] || "Itinerary"} - ${plannerData.startDate}`,
+        destination: plannerData.destinations[0],
+        startDate: plannerData.startDate,
+        endDate: plannerData.endDate,
+        travelerType: plannerData.travelerType,
+        preferences: plannerData.preferences,
+        activities: itinerary,
+        user: user.id,
+      }
     };
 
-    const res = await createItinerary(payload, token); // ✅ pass JWT
+    const response = await api.post("/itineraries", payload);
 
-    if (res && res.id) {
-      alert("Itinerary saved to your account.");
+    if (response.data) {
+      alert("Itinerary saved successfully!");
       navigate("/itineraries");
     } else {
-      console.warn("Unexpected save response:", res);
-      alert("Itinerary saved, but response looked different. Check console.");
+      alert("Failed to save itinerary. Please try again.");
     }
   } catch (err) {
-    console.error("Save error", err);
-    alert("Failed to save itinerary. Check console.");
+    console.error("Save error:", err.response ? err.response.data : err);
+    alert("An error occurred while saving. Check the console for details.");
   }
 };
 
