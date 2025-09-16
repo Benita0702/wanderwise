@@ -1,30 +1,20 @@
-import React, { useEffect, useState } from "react";
-import PackageCard from "../components/PackageCard";
-import axios from "axios";
+import React, { useEffect, useState } from 'react';
+import api from '../api'; // Use the central api instance
+import PackageCard from '../components/PackageCard';
+import { Loader } from 'lucide-react';
 
-function PackagesPage() {
+export default function PackagesPage() {
   const [packages, setPackages] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await axios.get("http://localhost:1337/api/tour-packages");
-        const formattedPackages = response.data.data.map((item) => ({
-          id: item.id,
-          title: item.Title.replace(/“|”/g, "") || "No Title",
-          price: item.Price || "N/A",
-          description:
-            typeof item.Description === "string"
-              ? item.Description
-              : item.Description?.data || "No description available",
-          image:
-            item.Image ||
-            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=250&q=60",
-        }));
-        setPackages(formattedPackages);
+        // Use populate=* to fetch all related fields, especially images
+        const response = await api.get('/tour-packages?populate=*');
+        setPackages(response.data.data);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching tour packages:", err);
       } finally {
         setLoading(false);
       }
@@ -33,26 +23,34 @@ function PackagesPage() {
     fetchPackages();
   }, []);
 
-  if (loading) return <p>Loading packages...</p>;
-  if (!packages.length) return <p>No packages found.</p>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader className="animate-spin h-12 w-12 text-blue-600" />
+      </div>
+    );
+  }
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1 style={{ marginBottom: "20px" }}>Tour Packages</h1>
-      <div style={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
-        {packages.map((pkg) => (
-          <PackageCard
-            key={pkg.id}
-            packageId={pkg.id}
-            title={pkg.title}
-            price={pkg.price}
-            description={pkg.description}
-            image={pkg.image}
-          />
-        ))}
+    <div className="bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-extrabold text-gray-900">Our Tour Packages</h1>
+          <p className="mt-4 text-xl text-gray-600">
+            Handcrafted journeys for every type of traveler.
+          </p>
+        </div>
+
+        {packages.length > 0 ? (
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {packages.map((pkg) => (
+              <PackageCard key={pkg.id} packageData={pkg} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-center mt-12 text-gray-500">No packages available at the moment. Please check back later.</p>
+        )}
       </div>
     </div>
   );
 }
-
-export default PackagesPage;

@@ -17,6 +17,10 @@ import DashboardPage from "./pages/DashboardPage";
 import BookingPage from "./pages/BookingPage";
 import ConfirmationPage from "./pages/ConfirmationPage";
 import BlogPage from "./pages/BlogPage";
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
+import MyBookingsPage from "./pages/MyBookingsPage";
+
 
 function Layout({ children }) {
   const location = useLocation();
@@ -46,18 +50,30 @@ function App() {
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/packages/:packageId" element={<PackageDetailPage />} />
           <Route path="/blog" element={<BlogPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           <Route path="/itineraries" element={
+
             <ProtectedRoute>
               <MyItineraries />
             </ProtectedRoute>
-          } />  
+          } />
 
           <Route
             path="/itinerary/:id"
             element={
               <ProtectedRoute>
                 <ItineraryDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/bookings"
+            element={
+              <ProtectedRoute>
+                <MyBookingsPage />
               </ProtectedRoute>
             }
           />
