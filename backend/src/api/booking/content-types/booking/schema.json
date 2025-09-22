@@ -42,6 +42,14 @@
     },
     "User_name": {
       "type": "string"
+    },
+    "Payment_method": {
+      "type": "enumeration",
+      "enum": [
+        "card",
+        "upi",
+        "cash"
+      ]
     }
   }
 }

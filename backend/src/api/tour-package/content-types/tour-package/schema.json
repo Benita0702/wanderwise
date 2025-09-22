@@ -21,6 +21,9 @@
     "Description": {
       "type": "blocks"
     },
+    "Highlights": {
+      "type": "blocks"
+    },
     "Price": {
       "type": "decimal"
     },
@@ -66,6 +69,15 @@
       "relation": "manyToMany",
       "target": "api::user-profile.user-profile",
       "mappedBy": "wishlists"
+    },
+    "Discount_price": {
+      "type": "integer"
+    },
+    "Location": {
+      "type": "string"
+    },
+    "Rating": {
+      "type": "decimal"
     }
   }
 }

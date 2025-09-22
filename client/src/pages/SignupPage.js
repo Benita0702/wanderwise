@@ -24,12 +24,17 @@ export default function SignupPage() {
     try {
       const res = await signup(formData.username, formData.email, formData.password);
 
+      // ✅ Save token in cookies
       Cookies.set("token", res.data.jwt, {
         expires: 3650,
         secure: true,
         sameSite: "strict",
       });
       Cookies.set("user", JSON.stringify(res.data.user), { expires: 3650 });
+
+      // ✅ Save in localStorage also
+      localStorage.setItem("userEmail", res.data.user.email);
+      localStorage.setItem("username", res.data.user.username);
 
       setUser(res.data.user);
       navigate("/");

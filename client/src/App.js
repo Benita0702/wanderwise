@@ -17,9 +17,12 @@ import DashboardPage from "./pages/DashboardPage";
 import BookingPage from "./pages/BookingPage";
 import ConfirmationPage from "./pages/ConfirmationPage";
 import BlogPage from "./pages/BlogPage";
+import BlogDetails from "./pages/BlogDetails";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
-import MyBookingsPage from "./pages/MyBookingsPage";
+import MyBookingsPage from "./pages/BookingPage";
+import WishlistPage from "./components/profile/WishlistPage";
+import MyBooking from "./components/profile/MyBooking";
 
 
 function Layout({ children }) {
@@ -49,9 +52,13 @@ function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/packages/:packageId" element={<PackageDetailPage />} />
-          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blogs" element={<BlogPage />} />
+          <Route path="/blog/:id" element={<BlogDetails />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/my-bookings" element={<MyBooking />} />
+
 
           <Route path="/itineraries" element={
 

@@ -107,6 +107,43 @@ export interface AdminApiTokenPermission extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface AdminAuditLog extends Struct.CollectionTypeSchema {
+  collectionName: 'strapi_audit_logs';
+  info: {
+    displayName: 'Audit Log';
+    pluralName: 'audit-logs';
+    singularName: 'audit-log';
+  };
+  options: {
+    draftAndPublish: false;
+    timestamps: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: false;
+    };
+  };
+  attributes: {
+    action: Schema.Attribute.String & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    date: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'admin::audit-log'> &
+      Schema.Attribute.Private;
+    payload: Schema.Attribute.JSON;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<'oneToOne', 'admin::user'>;
+  };
+}
+
 export interface AdminPermission extends Struct.CollectionTypeSchema {
   collectionName: 'admin_permissions';
   info: {
@@ -497,6 +534,7 @@ export interface ApiBlogBlog extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::blog.blog'> &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
+    publishedDate: Schema.Attribute.Date;
     Slug: Schema.Attribute.String;
     Title: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
@@ -529,6 +567,7 @@ export interface ApiBookingBooking extends Struct.CollectionTypeSchema {
       'api::booking.booking'
     > &
       Schema.Attribute.Private;
+    Payment_method: Schema.Attribute.Enumeration<['card', 'upi', 'cash']>;
     publishedAt: Schema.Attribute.DateTime;
     Start_date: Schema.Attribute.Date;
     Total_price: Schema.Attribute.Integer;
@@ -674,6 +713,33 @@ export interface ApiItineraryItinerary extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiNameName extends Struct.CollectionTypeSchema {
+  collectionName: 'names';
+  info: {
+    displayName: 'name';
+    pluralName: 'names';
+    singularName: 'name';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Blocks;
+    email: Schema.Attribute.Email;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::name.name'> &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiOfferOffer extends Struct.CollectionTypeSchema {
   collectionName: 'offers';
   info: {
@@ -760,8 +826,10 @@ export interface ApiTourPackageTourPackage extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     Description: Schema.Attribute.Blocks;
+    Discount_price: Schema.Attribute.Integer;
     Duration_days: Schema.Attribute.Integer;
     Exclusions: Schema.Attribute.Text;
+    Highlights: Schema.Attribute.Blocks;
     Images: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios',
       true
@@ -774,11 +842,13 @@ export interface ApiTourPackageTourPackage extends Struct.CollectionTypeSchema {
       'api::tour-package.tour-package'
     > &
       Schema.Attribute.Private;
+    Location: Schema.Attribute.String;
     Package_type: Schema.Attribute.Enumeration<
       ['Weekend', 'Honeymoon', 'Luxury', 'Adventure']
     >;
     Price: Schema.Attribute.Decimal;
     publishedAt: Schema.Attribute.DateTime;
+    Rating: Schema.Attribute.Decimal;
     Slug: Schema.Attribute.UID<'Title'>;
     Title: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
@@ -1332,6 +1402,7 @@ declare module '@strapi/strapi' {
     export interface ContentTypeSchemas {
       'admin::api-token': AdminApiToken;
       'admin::api-token-permission': AdminApiTokenPermission;
+      'admin::audit-log': AdminAuditLog;
       'admin::permission': AdminPermission;
       'admin::role': AdminRole;
       'admin::transfer-token': AdminTransferToken;
@@ -1346,6 +1417,7 @@ declare module '@strapi/strapi' {
       'api::destination.destination': ApiDestinationDestination;
       'api::global.global': ApiGlobalGlobal;
       'api::itinerary.itinerary': ApiItineraryItinerary;
+      'api::name.name': ApiNameName;
       'api::offer.offer': ApiOfferOffer;
       'api::testimonial.testimonial': ApiTestimonialTestimonial;
       'api::tour-package.tour-package': ApiTourPackageTourPackage;

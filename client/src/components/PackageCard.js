@@ -1,52 +1,55 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { MapPin, Clock, IndianRupee } from 'lucide-react';
-import { STRAPI_URL } from '../api'; // Import your Strapi URL constant
+import { Heart } from "lucide-react";
+import { Link } from "react-router-dom";
 
-export default function PackageCard({ packageData }) {
-  const navigate = useNavigate();
-  const { id, attributes: pkg } = packageData;
-
-  // Get the first image URL or a placeholder
-  const imageUrl = pkg.Images?.data?.[0]?.attributes?.url
-    ? `${STRAPI_URL}${pkg.Images.data[0].attributes.url}`
-    : 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRDl0koagaYSWUjgwdr2mNHABteHTWAxA_BdA&s';
-
+const PackageCard = ({
+  id,
+  title,
+  price,
+  description,
+  image,
+  duration,
+  location,
+  isWishlisted,
+  toggleWishlist,
+}) => {
   return (
-    <motion.div
-      whileHover={{ y: -5 }}
-      className="bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer flex flex-col"
-      onClick={() => navigate(`/packages/${id}`)}
-    >
-      <img
-        src={imageUrl}
-        alt={pkg.Title}
-        className="w-full h-56 object-cover"
-      />
-      <div className="p-6 flex-grow flex flex-col">
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">{pkg.Title}</h3>
-        
-        <div className="flex items-center text-gray-600 mb-4">
-          <Clock className="h-4 w-4 mr-2" />
-          <span>{pkg.Duration_days} Days</span>
-          <span className="mx-2">|</span>
-          <MapPin className="h-4 w-4 mr-2" />
-          <span>{pkg.Package_type}</span>
+    <div className="bg-white shadow-md rounded-2xl overflow-hidden hover:shadow-lg transition">
+      <div className="relative">
+        <img src={image} alt={title} className="w-full h-48 object-cover" />
+        <button
+          onClick={() =>
+            toggleWishlist({ id, title, price, description, image, duration, location })
+          }
+          className="absolute top-3 right-3 bg-white rounded-full p-2 shadow hover:scale-110 transition"
+        >
+          <Heart
+            className={`h-5 w-5 ${
+              isWishlisted ? "text-red-500 fill-red-500" : "text-gray-400"
+            }`}
+          />
+        </button>
+      </div>
+
+      <div className="p-4">
+        <h3 className="font-semibold text-lg">{title}</h3>
+        <p className="text-sm text-gray-600 line-clamp-2">{description}</p>
+        <div className="flex justify-between items-center mt-3">
+          <span className="text-blue-600 font-bold">₹{price}</span>
+          <span className="text-gray-500 text-sm">{duration} Days</span>
         </div>
 
-        <p className="text-gray-700 flex-grow mb-4">
-          {pkg.Description[0]?.children[0]?.text.slice(0, 100) || 'No description available'}...
-        </p>
-
-        <div className="mt-auto flex justify-between items-center">
-          <p className="text-2xl font-bold text-blue-600 flex items-center">
-            <IndianRupee className="h-6 w-6 mr-1" />
-            {pkg.Price.toLocaleString()}
-          </p>
-          <span className="text-sm text-gray-500">per person</span>
+        {/* View Details */}
+        <div className="mt-4">
+          <Link
+            to={`/packages/${id}`}
+            className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+          >
+            View Details
+          </Link>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
-}
+};
+
+export default PackageCard;

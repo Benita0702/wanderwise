@@ -24,7 +24,7 @@ export default function LoginPage() {
     try {
       const res = await login(formData.email, formData.password);
 
-      // Save token + user in cookies
+      // ✅ Save token + user in cookies
       Cookies.set("token", res.data.jwt, {
         expires: 3650,
         secure: true,
@@ -32,7 +32,11 @@ export default function LoginPage() {
       });
       Cookies.set("user", JSON.stringify(res.data.user), { expires: 3650 });
 
-      // Update context
+      // ✅ Save user info in localStorage also
+      localStorage.setItem("userEmail", res.data.user.email);
+      localStorage.setItem("username", res.data.user.username);
+
+      // ✅ Update context
       setUser(res.data.user);
       setToken(res.data.jwt);
 

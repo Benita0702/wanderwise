@@ -15,7 +15,7 @@ export default function Navbar() {
     { name: "Home", href: "/" },
     { name: "Packages", href: "/packages" },
     { name: "Planner", href: "/planner" },
-    { name: "Blog", href: "/blog" },
+    { name: "Blog", href: "/blogs" },
     { name: "About Us", href: "/about" },
     { name: "Contact", href: "/contact" },
   ];
@@ -93,11 +93,12 @@ export default function Navbar() {
                         My Profile
                       </Link>
                       <Link
-                        to="/bookings"
+                        to="/my-bookings"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         My Bookings
                       </Link>
+
                       <Link
                         to="/itineraries"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
