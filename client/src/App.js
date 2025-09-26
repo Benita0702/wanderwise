@@ -14,14 +14,13 @@ import ItineraryDetail from "./components/ItineraryDetail";
 import PackagesPage from "./pages/PackagesPage";
 import PackageDetailPage from "./pages/PackageDetailPage";
 import DashboardPage from "./pages/DashboardPage";
-import BookingPage from "./pages/BookingPage";
 import ConfirmationPage from "./pages/ConfirmationPage";
 import BlogPage from "./pages/BlogPage";
 import BlogDetails from "./pages/BlogDetails";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
-import MyBookingsPage from "./pages/BookingPage";
 import WishlistPage from "./components/profile/WishlistPage";
+import BookingPage from "./pages/BookingPage";
 import MyBooking from "./components/profile/MyBooking";
 
 
@@ -77,10 +76,10 @@ function App() {
           />
 
           <Route
-            path="/bookings"
+            path="/my-bookings"
             element={
               <ProtectedRoute>
-                <MyBookingsPage />
+                <MyBooking />
               </ProtectedRoute>
             }
           />
@@ -100,8 +99,9 @@ function App() {
               <ProtectedRoute>
                 <BookingPage />
               </ProtectedRoute>
-            }
-          />
+          }
+        />
+
           <Route
             path="/dashboard"
             element={

@@ -16,27 +16,40 @@ function PackagesPage() {
   const [selectedDurations, setSelectedDurations] = useState([]);
   const [sortOrder, setSortOrder] = useState("asc");
 
+  // ✅ Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const packagesPerPage = 9;
+
   // ✅ Fetch packages
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await axios.get("http://localhost:1337/api/tour-packages");
+        const response = await axios.get(
+            "http://localhost:1337/api/tour-packages?populate=Images&pagination[limit]=100"
+        );
+
+        console.log("RAW RESPONSE:", response.data);
+
         const formattedPackages = response.data.data.map((item) => ({
           id: item.id,
           title: item.Title || "No Title",
           price: item.Price || 0,
           category: item.Package_type || "General",
           description: Array.isArray(item.Description)
-            ? item.Description.map((d) => d.children?.map((c) => c.text).join(" ")).join(" ")
+            ? item.Description.map((d) =>
+                d.children?.map((c) => c.text).join(" ")
+              ).join(" ")
             : "No description available",
           image:
-            item.Images?.[0]?.url ||
-            "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=60",
-          discount: item.Discount || null,
+            item.Images?.[0]?.url
+              ? `http://localhost:1337${item.Images[0].url}`
+              : "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=60",
+          discount: item.Discount_price || null,
           location: item.Location || "India",
           duration: item.Duration_days || 0,
           rating: item.Rating || 4.5,
         }));
+
         setPackages(formattedPackages);
         setFilteredPackages(formattedPackages);
 
@@ -88,6 +101,7 @@ function PackagesPage() {
     );
 
     setFilteredPackages(result);
+    setCurrentPage(1); // reset to page 1 when filters change
   }, [searchTerm, selectedCategory, priceRange, selectedDurations, sortOrder, packages]);
 
   // ✅ Wishlist handler
@@ -109,6 +123,16 @@ function PackagesPage() {
       prev.includes(value) ? prev.filter((d) => d !== value) : [...prev, value]
     );
   };
+
+  // ✅ Pagination logic
+  const indexOfLastPackage = currentPage * packagesPerPage;
+  const indexOfFirstPackage = indexOfLastPackage - packagesPerPage;
+  const currentPackages = filteredPackages.slice(indexOfFirstPackage, indexOfLastPackage);
+  const totalPages = Math.ceil(filteredPackages.length / packagesPerPage);
+
+  const goToPage = (pageNumber) => setCurrentPage(pageNumber);
+  const goToNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const goToPrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
   if (loading) return <p className="text-center py-10">Loading packages...</p>;
   if (!packages.length) return <p className="text-center py-10">No packages found.</p>;
@@ -210,7 +234,7 @@ function PackagesPage() {
 
         {/* Package Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredPackages.map((pkg) => (
+          {currentPackages.map((pkg) => (
             <PackageCard
               key={pkg.id}
               {...pkg}
@@ -219,6 +243,49 @@ function PackagesPage() {
             />
           ))}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-8 space-x-2 items-center">
+            <button
+              onClick={goToPrev}
+              disabled={currentPage === 1}
+              className={`px-3 py-2 rounded-md border ${
+                currentPage === 1
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : "bg-white text-gray-700"
+              }`}
+            >
+              Previous
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i + 1}
+                onClick={() => goToPage(i + 1)}
+                className={`px-4 py-2 rounded-md border ${
+                  currentPage === i + 1
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-gray-700"
+                }`}
+              >
+                {i + 1}
+              </button>
+            ))}
+
+            <button
+              onClick={goToNext}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-2 rounded-md border ${
+                currentPage === totalPages
+                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                  : "bg-white text-gray-700"
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        )}
 
         {filteredPackages.length === 0 && (
           <div className="text-center py-12">

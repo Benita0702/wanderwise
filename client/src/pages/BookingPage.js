@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
@@ -9,6 +9,9 @@ function MyBookingsPage() {
   const { user } = useContext(AuthContext);
 
   const [step, setStep] = useState(1);
+  const [packageData, setPackageData] = useState(null); // ✅ package info
+  const [loading, setLoading] = useState(true);
+
   const [travelers, setTravelers] = useState([
     { fullName: "", age: "", email: user?.email || "", phone: "" },
   ]);
@@ -25,9 +28,26 @@ function MyBookingsPage() {
     upi: "",
   });
 
-  // Demo pricing
-  const basePrice = 15000;
-  const taxes = 2700;
+  // ✅ Fetch package from backend
+  useEffect(() => {
+    const fetchPackage = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:1337/api/packages/${packageId}?populate=*`
+        );
+        setPackageData(res.data.data);
+      } catch (err) {
+        console.error("Error fetching package:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPackage();
+  }, [packageId]);
+
+  // ✅ Use dynamic package price (fallback if missing)
+  const basePrice = packageData?.attributes?.price || 15000;
+  const taxes = Math.round(basePrice * 0.1); // 10% tax
   const addonPrices = { flight: 8000, insurance: 500, car: 3000 };
 
   const calcTotal = () => {
@@ -78,7 +98,6 @@ function MyBookingsPage() {
           return false;
         }
       }
-      // ✅ Cash has no validation required
     }
     return true;
   };
@@ -96,10 +115,8 @@ function MyBookingsPage() {
         Total_price: calcTotal(),
         Booking_status: "Confirmed",
         Payment_method: payment.method,
-        tour_package: packageId, // ✅ Linked package
+        tour_package: packageId,
       };
-
-      console.log("Sending bookingData:", bookingData);
 
       await axios.post("http://localhost:1337/api/bookings", {
         data: bookingData,
@@ -119,9 +136,20 @@ function MyBookingsPage() {
     <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* LEFT */}
       <div className="lg:col-span-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded"
+        >
+          ← Back
+        </button>
+
         <h1 className="text-3xl font-bold mb-2">Complete Your Booking</h1>
         <p className="text-gray-600 mb-6">
-          Goa Beach Paradise - 4 Days, 3 Nights
+          {loading
+            ? "Loading package..."
+            : packageData
+            ? `${packageData.attributes.title} - ${packageData.attributes.duration}`
+            : "Package not found"}
         </p>
 
         {/* Stepper */}
@@ -298,7 +326,7 @@ function MyBookingsPage() {
             )}
           </div>
         )}
-
+        
         {/* Footer Buttons */}
         <div className="flex justify-between mt-6">
           {step > 1 && (
@@ -334,9 +362,12 @@ function MyBookingsPage() {
       {/* RIGHT (Summary) */}
       <div className="bg-white p-6 rounded-lg shadow h-fit">
         <h2 className="text-xl font-semibold mb-4">Booking Summary</h2>
+        <p className="font-medium">
+          {packageData ? packageData.attributes.title : "Selected Package"}
+        </p>
         <p>
-          Package ({travelers.length} traveler{travelers.length > 1 ? "s" : ""}) ₹
-          {basePrice}
+          Package ({travelers.length} traveler
+          {travelers.length > 1 ? "s" : ""}) ₹{basePrice}
         </p>
         <p>Taxes & fees ₹{taxes}</p>
         {Object.keys(addons).map(

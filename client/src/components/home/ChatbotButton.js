@@ -22,35 +22,27 @@ export default function ChatbotButton() {
   const [loading, setLoading] = useState(false);
 
   const sendMessage = async (text, fromOption = false) => {
-    if (!text) return;
+    if (!text?.trim()) return;
 
-    // add user message
-    setMessages((prev) => [...prev, { sender: "user", text }]);
+    const userMessage = { sender: "user", text: text.trim() };
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setLoading(true);
 
     try {
-      // call backend or directly OpenAI API
-      const res = await axios.post("http://localhost:1337/api/chatbot", {
-        message: text,
-      });
+      const res = await axios.post("http://localhost:1337/api/chatbot", { message: text.trim() });
 
-      const reply =
-        res.data?.response ||
-        "Sorry, I couldn’t find an answer. Try rephrasing your question.";
+      const botReply = res.data?.response || "Sorry, I couldn't find an answer. Try rephrasing your question.";
 
       setMessages((prev) => [
         ...prev,
-        { sender: "bot", text: reply, options: fromOption ? [] : null },
+        { sender: "bot", text: botReply, options: fromOption ? [] : null },
       ]);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error("Chatbot error:", err);
       setMessages((prev) => [
         ...prev,
-        {
-          sender: "bot",
-          text: "⚠️ Something went wrong while fetching response.",
-        },
+        { sender: "bot", text: "⚠️ Something went wrong while fetching response." },
       ]);
     }
 
@@ -59,7 +51,6 @@ export default function ChatbotButton() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      {/* Floating Button */}
       {!isOpen && (
         <motion.button
           onClick={() => setIsOpen(true)}
@@ -71,7 +62,6 @@ export default function ChatbotButton() {
         </motion.button>
       )}
 
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -90,28 +80,22 @@ export default function ChatbotButton() {
 
             {/* Messages */}
             <div className="flex-1 p-4 overflow-y-auto space-y-3">
-              {messages.map((msg, i) => (
+              {messages.map((msg, idx) => (
                 <div
-                  key={i}
-                  className={`flex ${
-                    msg.sender === "user" ? "justify-end" : "justify-start"
-                  }`}
+                  key={idx}
+                  className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
                     className={`p-3 rounded-lg max-w-xs ${
-                      msg.sender === "user"
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-800"
+                      msg.sender === "user" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"
                     }`}
                   >
                     <p>{msg.text}</p>
-
-                    {/* quick reply options */}
                     {msg.options && (
                       <div className="mt-2 space-y-2">
-                        {msg.options.map((opt, idx) => (
+                        {msg.options.map((opt, i) => (
                           <button
-                            key={idx}
+                            key={i}
                             onClick={() => sendMessage(opt, true)}
                             className="block w-full text-left text-sm bg-white border rounded-md px-3 py-2 hover:bg-gray-100"
                           >
@@ -122,14 +106,12 @@ export default function ChatbotButton() {
                     )}
                   </div>
                 </div>
-              ))}
+              ))} 
 
-              {loading && (
-                <p className="text-gray-500 text-sm">Bot is typing...</p>
-              )}
+              {loading && <p className="text-gray-500 text-sm">Bot is typing...</p>}
             </div>
 
-            {/* Input Box */}
+            {/* Input */}
             <div className="p-3 border-t flex items-center space-x-2">
               <input
                 type="text"
@@ -137,6 +119,9 @@ export default function ChatbotButton() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask me about travel plans..."
                 className="flex-1 border p-2 rounded-lg focus:ring-2 focus:ring-blue-500"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") sendMessage(input);
+                }}
               />
               <button
                 onClick={() => sendMessage(input)}

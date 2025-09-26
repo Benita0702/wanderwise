@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Heart } from "lucide-react";
+import { Heart, ChevronLeft, ChevronRight, Save, Share2, ArrowLeft, } from "lucide-react";
 
 function PackageDetailPage() {
   const { packageId } = useParams();
@@ -13,6 +13,7 @@ function PackageDetailPage() {
   const [travelers, setTravelers] = useState(1);
   const [date, setDate] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
+  const [currentImage, setCurrentImage] = useState(0);
 
   // helpers to parse Strapi rich text / strings into arrays or text
   const parseRichTextToLines = (input) => {
@@ -73,6 +74,7 @@ function PackageDetailPage() {
           setPackageData(null);
           return;
         }
+        
 
         // DESCRIPTION: join rich text blocks into a paragraph
         let descriptionText = "No description provided";
@@ -110,9 +112,10 @@ function PackageDetailPage() {
           exclusions: exclusionsArr,
           itinerary: itineraryLines,
           images:
-            item.Images?.data?.map(
-              (img) => `http://localhost:1337${img.attributes.url}`
-            ) || ["https://placehold.co/300x200?text=No+Image"],
+              Array.isArray(item.Images) && item.Images.length > 0
+              ? item.Images.map((img) => `http://localhost:1337${img.url}`)
+              : ["https://placehold.co/300x200?text=No+Image"],
+
           rating: item.Rating || null,
           reviews: item.reviews || null, // if you have reviews relation, keep it; otherwise null
         });
@@ -157,7 +160,7 @@ function PackageDetailPage() {
 
   // Price calculation (per person * travelers)
   const packageCost = Number(packageData.price || 0) * Number(travelers || 1);
-  const taxes = Math.round(packageCost * 0.18); // example 18% tax
+  const taxes = Math.round(packageCost * 0.10); // example 18% tax
   const total = packageCost + taxes;
 
   // today for date min (prevent past)
@@ -166,8 +169,41 @@ function PackageDetailPage() {
   // whether to show reviews tab
   const hasReviews = Array.isArray(packageData.reviews) && packageData.reviews.length > 0;
 
+  const nextImage = () => {
+    setCurrentImage((prev) => (prev + 1) % packageData.images.length);
+  };
+  const prevImage = () => {
+    setCurrentImage((prev) =>
+      prev === 0 ? packageData.images.length - 1 : prev - 1
+    );
+  };
+
+   // Book Now with login check
+  const handleBookNow = () => {
+    const loggedIn = localStorage.getItem("user");
+    if (!loggedIn) {
+      navigate("/login");
+    } else {
+      navigate(`/booking/${packageId}`);
+    }
+  };
+
+  const handleSave = () => alert("Package saved!");
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    alert("Package link copied to clipboard!");
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* ✅ Back Button */}
+      <button
+        onClick={() => navigate("/packages")}
+        className="flex items-center text-gray-600 hover:text-blue-600 mb-4"
+      >
+        <ArrowLeft className="w-5 h-5 mr-2" /> Back to Packages
+      </button>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* LEFT: main content (2 cols) */}
         <div className="md:col-span-2">
@@ -193,13 +229,30 @@ function PackageDetailPage() {
             </div>
           </div>
 
-          {/* top image */}
-          <div className="mt-6 rounded-xl overflow-hidden shadow-sm">
+
+          {/* ✅ Image Slider */}
+          <div className="mt-6 relative rounded-xl overflow-hidden shadow-sm">
             <img
-              src={packageData.images[0]}
+              src={packageData.images[currentImage]}  
               alt={packageData.title}
-              className="w-full h-56 object-cover"
+              className="w-full object-contain rounded-xl"
             />
+            {packageData.images.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute top-1/2 left-4 -translate-y-1/2 bg-white p-2 rounded-full shadow"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute top-1/2 right-4 -translate-y-1/2 bg-white p-2 rounded-full shadow"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
           </div>
 
           {/* tabs */}
@@ -240,16 +293,6 @@ function PackageDetailPage() {
               <div className="bg-white rounded-lg p-6 shadow-sm">
                 <h2 className="text-2xl font-semibold mb-3">About This Package</h2>
                 <p className="text-gray-700 whitespace-pre-line">{packageData.description}</p>
-
-                <h3 className="text-xl font-semibold mt-6 mb-3">Package Highlights</h3>
-                <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-gray-700">
-                  <li>✅ Beautiful beach resort accommodation</li>
-                  <li>✅ Water sports and adventure activities</li>
-                  <li>✅ Guided sightseeing tours</li>
-                  <li>✅ Delicious local cuisine</li>
-                  <li>✅ Professional tour guide</li>
-                  <li>✅ 24/7 customer support</li>
-                </ul>
               </div>
             )}
 
@@ -367,11 +410,36 @@ function PackageDetailPage() {
             </div>
 
             <button
-              onClick={() => navigate(`/booking/${packageId}`)}
-              className="mt-6 bg-orange-500 hover:bg-orange-600 text-white w-full py-3 rounded-lg font-semibold"
+               onClick={handleBookNow}   // <-- use the function we created
+               className="mt-6 bg-orange-500 hover:bg-orange-600 text-white w-full py-3 rounded-lg font-semibold"
             >
-              Book Now
+            Book Now
             </button>
+
+
+            {/* ✅ Customize Package */}
+            <button
+              onClick={() => navigate("/planner")}
+              className="mt-3 bg-blue-500 hover:bg-blue-600 text-white w-full py-3 rounded-lg font-semibold"
+            >
+              Customize Package
+            </button>
+
+            {/* ✅ Save & Share */}
+            <div className="flex justify-between mt-4">
+              <button
+                onClick={handleSave}
+                className="flex items-center space-x-1 text-green-600"
+              >
+                <Save className="w-5 h-5" /> <span>Save</span>
+              </button>
+              <button
+                onClick={handleShare}
+                className="flex items-center space-x-1 text-blue-600"
+              >
+                <Share2 className="w-5 h-5" /> <span>Share</span>
+              </button>
+            </div>
 
             {/* WhatsApp support */}
             <div className="mt-6">

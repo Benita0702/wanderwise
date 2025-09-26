@@ -1,45 +1,33 @@
-import OpenAI from "openai";
+const axios = require("axios");
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-export default {
-  async test(ctx) {
-    ctx.body = { message: "Chatbot route is working 🎉" };
-  },
-
+module.exports = {
   async create(ctx) {
     try {
-      const { message } = ctx.request.body as { message: string };
+      let { message } = ctx.request.body;
 
-      if (!message) {
-        return ctx.throw(400, "Message is required");
+      // ✅ Validate message
+      if (!message || typeof message !== "string" || message.trim().length === 0) {
+        return ctx.throw(400, "Message is required and cannot be empty");
       }
+      message = message.trim();
 
-      const completion = await client.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [{ role: "user", content: message }],
+      // ✅ Call local Ollama Mistral model
+      const res = await axios.post("http://127.0.0.1:11434/api/generate", {
+        model: "mistral",
+        prompt: message,
+        options: { max_tokens: 500, temperature: 0.7 },
       });
 
-      const reply = completion.choices[0].message.content;
 
-      ctx.body = { response: reply };
+      // ✅ Safely extract the response
+      const reply = res.data?.completion?.trim() || "No response from Ollama";
+
+      ctx.send({ response: reply });
     } catch (err) {
-      // --- ENHANCED ERROR LOGGING ---
-      console.error("--- OpenAI API Error ---");
-      if (err instanceof OpenAI.APIError) {
-        console.error("Status:", err.status);
-        console.error("Message:", err.message);
-        console.error("Code:", err.code);
-        console.error("Type:", err.type);
-      } else {
-        console.error("Non-API Error:", err);
-      }
-      console.error("--- End of Error ---");
-      // --- END OF ENHANCED LOGGING ---
-
-      ctx.body = { response: "⚠️ Error: Could not get AI response." };
+      console.error("⚠️ Ollama Chat API Error:", err.response?.data || err.message || err);
+      ctx.send({
+        response: "⚠️ Something went wrong while fetching response. Check backend logs.",
+      });
     }
   },
 };
