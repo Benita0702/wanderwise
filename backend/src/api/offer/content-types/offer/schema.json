@@ -32,6 +32,14 @@
     },
     "valid_till": {
       "type": "date"
+    },
+    "tour_packages": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::tour-package.tour-package"
+    },
+    "slug": {
+      "type": "uid"
     }
   }
 }

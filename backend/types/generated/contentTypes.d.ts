@@ -764,7 +764,12 @@ export interface ApiOfferOffer extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::offer.offer'> &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
+    slug: Schema.Attribute.UID;
     Title: Schema.Attribute.String;
+    tour_packages: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::tour-package.tour-package'
+    >;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -826,10 +831,8 @@ export interface ApiTourPackageTourPackage extends Struct.CollectionTypeSchema {
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     Description: Schema.Attribute.Blocks;
-    Discount_price: Schema.Attribute.Integer;
     Duration_days: Schema.Attribute.Integer;
     Exclusions: Schema.Attribute.Text;
-    Highlights: Schema.Attribute.Blocks;
     Images: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios',
       true
