@@ -10,7 +10,7 @@ module.exports = {
       const { name, email, message } = ctx.request.body;
 
       await strapi.plugins['email'].services.email.send({
-        to: 'hritambh9@gmail.com',      // 👈 Replace with your email
+        to: 'benitadsouza07@gmail.com',      // 👈 Replace with your email
         from: 'support@tripnexa.com', // 👈 Replace with a verified sender
         replyTo: email,
         subject: `New Contact Form Submission from ${name}`,
