@@ -786,7 +786,7 @@ export interface ApiTourPackageTourPackage extends Struct.CollectionTypeSchema {
     singularName: 'tour-package';
   };
   options: {
-    draftAndPublish: false;
+    draftAndPublish: true;
   };
   attributes: {
     bookings: Schema.Attribute.Relation<'oneToMany', 'api::booking.booking'>;

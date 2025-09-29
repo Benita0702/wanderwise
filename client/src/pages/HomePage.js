@@ -7,6 +7,7 @@ import { TravelStories } from "../components/home/TravelStories";
 import { Testimonials } from "../components/home/Testimonials";
 import  ChatbotButton  from "../components/home/ChatbotButton";
 import { BudgetOptimizerFloating } from "../components/home/BudgetOptimizerFloating";
+import renderRichText from "../utils/renderRichText";
 
 export default function HomePage() {
   const [offers, setOffers] = useState([]);
@@ -32,12 +33,12 @@ export default function HomePage() {
   }, []);
 
   // ✅ Helper to render Rich Text
-  const renderRichText = (blocks) =>
-    blocks?.map((block, i) =>
-      block.children?.map((child, j) => (
-        <span key={`${i}-${j}`}>{child.text}</span>
-      ))
-    );
+  // const renderRichText = (blocks) =>
+  //   blocks?.map((block, i) =>
+  //     block.children?.map((child, j) => (
+  //       <span key={`${i}-${j}`}>{child.text}</span>
+  //     ))
+  //   );
 
   return (
     <div>

@@ -1,8 +1,8 @@
-// src/pages/PackageDetailPage.js
-import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Heart, ChevronLeft, ChevronRight, Save, Share2, ArrowLeft, } from "lucide-react";
+import React, { useEffect, useState, useContext } from "react"; // 👈 Add useContext
+import { AuthContext } from "../context/AuthContext"; // 👈 Add this import
 
 function PackageDetailPage() {
   const { packageId } = useParams();
@@ -14,6 +14,8 @@ function PackageDetailPage() {
   const [date, setDate] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
   const [currentImage, setCurrentImage] = useState(0);
+  const { user } = useContext(AuthContext); // 👈 Add this line
+
 
   // helpers to parse Strapi rich text / strings into arrays or text
   const parseRichTextToLines = (input) => {
@@ -180,8 +182,8 @@ function PackageDetailPage() {
 
    // Book Now with login check
   const handleBookNow = () => {
-    const loggedIn = localStorage.getItem("user");
-    if (!loggedIn) {
+    // ✅ **FIX: Check for the user from context instead of localStorage**
+    if (!user) {
       navigate("/login");
     } else {
       navigate(`/booking/${packageId}`);

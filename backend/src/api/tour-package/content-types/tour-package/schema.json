@@ -7,7 +7,7 @@
     "displayName": "Tour Package"
   },
   "options": {
-    "draftAndPublish": false
+    "draftAndPublish": true
   },
   "pluginOptions": {},
   "attributes": {

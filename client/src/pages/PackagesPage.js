@@ -25,7 +25,7 @@ function PackagesPage() {
     const fetchPackages = async () => {
       try {
         const response = await axios.get(
-            "http://localhost:1337/api/tour-packages?populate=Images&pagination[limit]=100"
+          "http://localhost:1337/api/tour-packages?populate=Images&pagination[limit]=100"
         );
 
         console.log("RAW RESPONSE:", response.data);
@@ -37,8 +37,8 @@ function PackagesPage() {
           category: item.Package_type || "General",
           description: Array.isArray(item.Description)
             ? item.Description.map((d) =>
-                d.children?.map((c) => c.text).join(" ")
-              ).join(" ")
+              d.children?.map((c) => c.text).join(" ")
+            ).join(" ")
             : "No description available",
           image:
             item.Images?.[0]?.url
@@ -250,11 +250,10 @@ function PackagesPage() {
             <button
               onClick={goToPrev}
               disabled={currentPage === 1}
-              className={`px-3 py-2 rounded-md border ${
-                currentPage === 1
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : "bg-white text-gray-700"
-              }`}
+              className={`px-3 py-2 rounded-md border ${currentPage === 1
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-white text-gray-700"
+                }`}
             >
               Previous
             </button>
@@ -263,11 +262,10 @@ function PackagesPage() {
               <button
                 key={i + 1}
                 onClick={() => goToPage(i + 1)}
-                className={`px-4 py-2 rounded-md border ${
-                  currentPage === i + 1
-                    ? "bg-blue-600 text-white"
-                    : "bg-white text-gray-700"
-                }`}
+                className={`px-4 py-2 rounded-md border ${currentPage === i + 1
+                  ? "bg-blue-600 text-white"
+                  : "bg-white text-gray-700"
+                  }`}
               >
                 {i + 1}
               </button>
@@ -276,11 +274,10 @@ function PackagesPage() {
             <button
               onClick={goToNext}
               disabled={currentPage === totalPages}
-              className={`px-3 py-2 rounded-md border ${
-                currentPage === totalPages
-                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                  : "bg-white text-gray-700"
-              }`}
+              className={`px-3 py-2 rounded-md border ${currentPage === totalPages
+                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                : "bg-white text-gray-700"
+                }`}
             >
               Next
             </button>

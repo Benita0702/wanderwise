@@ -67,18 +67,20 @@ function MyBooking() {
                 <tr key={b.id} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-2">{b.id}</td>
                   <td className="px-4 py-2">
-                    {b.attributes?.tour_package?.data?.attributes?.Name || "N/A"}
+                    {/* ✅ FIX: Access the tour package title directly */}
+                    {b.tour_package?.Title || "N/A"}
                   </td>
-                  <td className="px-4 py-2">{b.attributes?.User_name || "N/A"}</td>
-                  <td className="px-4 py-2">{b.attributes?.User_email || "N/A"}</td>
-                  <td className="px-4 py-2">{b.attributes?.Travelers_count || 0}</td>
-                  <td className="px-4 py-2">{b.attributes?.Start_date || "-"}</td>
-                  <td className="px-4 py-2">₹{b.attributes?.Total_price ?? 0}</td>
+                  {/* ✅ FIX: Access all fields directly from the booking object 'b' */}
+                  <td className="px-4 py-2">{b.User_name || "N/A"}</td>
+                  <td className="px-4 py-2">{b.User_email || "N/A"}</td>
+                  <td className="px-4 py-2">{b.Travelers_count || 0}</td>
+                  <td className="px-4 py-2">{b.Start_date || "-"}</td>
+                  <td className="px-4 py-2">₹{b.Total_price ?? 0}</td>
                   <td className="px-4 py-2">
-                    {b.attributes?.Booking_status || "Pending"}
+                    {b.Booking_status || "Pending"}
                   </td>
                   <td className="px-4 py-2">
-                    {b.attributes?.Payment_method || "Unpaid"}
+                    {b.Payment_method || "Unpaid"}
                   </td>
                 </tr>
               ))}

@@ -24,6 +24,7 @@ import BookingPage from "./pages/BookingPage";
 import MyBooking from "./components/profile/MyBooking";
 import OfferDetails from "./pages/OfferDetails";
 import MyProfile from "./components/profile/MyProfile";
+import { AuthProvider } from "./context/AuthContext";
 
 
 function Layout({ children }) {
@@ -45,88 +46,90 @@ function Layout({ children }) {
 
 function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/packages" element={<PackagesPage />} />
-          <Route path="/packages/:packageId" element={<PackageDetailPage />} />
-          <Route path="/blogs" element={<BlogPage />} />
-          <Route path="/blog/:id" element={<BlogDetails />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/wishlist" element={<WishlistPage />} />
-          <Route path="/my-bookings" element={<MyBooking />} />
-          <Route path="/offers/:slug" element={<OfferDetails />} />
-          <Route path="/my-profile" element={<MyProfile />} />
+    <AuthProvider>
+      <Router>
+        <Layout>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/packages" element={<PackagesPage />} />
+            <Route path="/packages/:packageId" element={<PackageDetailPage />} />
+            <Route path="/blogs" element={<BlogPage />} />
+            <Route path="/blog/:id" element={<BlogDetails />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/my-bookings" element={<MyBooking />} />
+            <Route path="/offers/:slug" element={<OfferDetails />} />
+            <Route path="/my-profile" element={<MyProfile />} />
 
 
 
-          <Route path="/itineraries" element={
+            <Route path="/itineraries" element={
 
-            <ProtectedRoute>
-              <MyItineraries />
-            </ProtectedRoute>
-          } />
-
-          <Route
-            path="/itinerary/:id"
-            element={
               <ProtectedRoute>
-                <ItineraryDetail />
+                <MyItineraries />
               </ProtectedRoute>
-            }
-          />
+            } />
 
-          <Route
-            path="/my-bookings"
-            element={
-              <ProtectedRoute>
-                <MyBooking />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="/itinerary/:id"
+              element={
+                <ProtectedRoute>
+                  <ItineraryDetail />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Protected Routes */}
-          <Route
-            path="/planner"
-            element={
-              <ProtectedRoute>
-                <PlannerPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/booking/:packageId"
-            element={
-              <ProtectedRoute>
-                <BookingPage />
-              </ProtectedRoute>
-          }
-        />
+            <Route
+              path="/my-bookings"
+              element={
+                <ProtectedRoute>
+                  <MyBooking />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/confirmation/:bookingId"
-            element={
-              <ProtectedRoute>
-                <ConfirmationPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<div>Page Not Found</div>} />
-        </Routes>
-      </Layout>
-    </Router>
+            {/* Protected Routes */}
+            <Route
+              path="/planner"
+              element={
+                <ProtectedRoute>
+                  <PlannerPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/booking/:packageId"
+              element={
+                <ProtectedRoute>
+                  <BookingPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/confirmation/:bookingId"
+              element={
+                <ProtectedRoute>
+                  <ConfirmationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<div>Page Not Found</div>} />
+          </Routes>
+        </Layout>
+      </Router>
+    </AuthProvider>
   );
 }
 
