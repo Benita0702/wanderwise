@@ -23,6 +23,7 @@ import WishlistPage from "./components/profile/WishlistPage";
 import BookingPage from "./pages/BookingPage";
 import MyBooking from "./components/profile/MyBooking";
 import OfferDetails from "./pages/OfferDetails";
+import MyProfile from "./components/profile/MyProfile";
 
 
 function Layout({ children }) {
@@ -58,7 +59,8 @@ function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
           <Route path="/my-bookings" element={<MyBooking />} />
-        <Route path="/offers/:slug" element={<OfferDetails />} />
+          <Route path="/offers/:slug" element={<OfferDetails />} />
+          <Route path="/my-profile" element={<MyProfile />} />
 
 
 
