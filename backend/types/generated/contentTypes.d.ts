@@ -838,22 +838,31 @@ export interface ApiUserProfileUserProfile extends Struct.CollectionTypeSchema {
     draftAndPublish: true;
   };
   attributes: {
+    Address: Schema.Attribute.Blocks;
+    Birthday: Schema.Attribute.Date;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     Email: Schema.Attribute.Email;
+    FullName: Schema.Attribute.String;
+    Gender: Schema.Attribute.Enumeration<['Male', 'Female', 'Others']>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::user-profile.user-profile'
     > &
       Schema.Attribute.Private;
-    Name: Schema.Attribute.String;
+    Phone: Schema.Attribute.String;
     Preferences: Schema.Attribute.JSON;
+    Profile: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    users_permissions_user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
     wishlists: Schema.Attribute.Relation<
       'manyToMany',
       'api::tour-package.tour-package'

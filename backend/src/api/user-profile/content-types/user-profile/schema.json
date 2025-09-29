@@ -11,7 +11,7 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "Name": {
+    "FullName": {
       "type": "string"
     },
     "Email": {
@@ -25,6 +25,38 @@
       "relation": "manyToMany",
       "target": "api::tour-package.tour-package",
       "inversedBy": "user_profiles"
+    },
+    "Phone": {
+      "type": "string"
+    },
+    "Address": {
+      "type": "blocks"
+    },
+    "Birthday": {
+      "type": "date"
+    },
+    "Gender": {
+      "type": "enumeration",
+      "enum": [
+        "Male",
+        "Female",
+        "Others"
+      ]
+    },
+    "Profile": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
     }
   }
 }
