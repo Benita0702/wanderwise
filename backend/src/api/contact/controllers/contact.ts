@@ -11,7 +11,7 @@ module.exports = {
 
       await strapi.plugins['email'].services.email.send({
         to: 'benitadsouza07@gmail.com',      // 👈 Replace with your email
-        from: 'support@tripnexa.com', // 👈 Replace with a verified sender
+        from: 'benitadsouza07@gmail.com', // 👈 Replace with a verified sender
         replyTo: email,
         subject: `New Contact Form Submission from ${name}`,
         text: message,
