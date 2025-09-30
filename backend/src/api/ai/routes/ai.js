@@ -1,52 +1,39 @@
-// server.js or routes/ai.js
 import express from "express";
-import { HfInference } from "@huggingface/inference";
+import fetch from "node-fetch";
 
 const router = express.Router();
-const hf = new HfInference(process.env.HF_TOKEN); // your HF token in .env
 
-router.post("/ai", async (req, res) => {
-  const { destination, preferences, totalDays, budget } = req.body;
-
-  if (!destination || !totalDays || !budget) {
-    return res.status(400).json({ error: "Destination, totalDays, and budget are required" });
-  }
-
-  const prompt = `
-You are a travel assistant. Generate a ${totalDays}-day trip plan for ${destination}.
-Budget: ₹${budget}.
-Preferences: ${preferences.join(", ") || "General"}.
-Give **realistic daily activities** suitable for the budget.
-Format your response as JSON array like:
-[
-  {"day": 1, "activities": ["Activity 1 description", "Activity 2 description"]},
-  {"day": 2, "activities": ["..."]}
-]
-`;
-
+router.post("/", async (req, res) => {
   try {
-    const response = await hf.textGeneration({
-      model: "google/gemma-7b-it",
-      inputs: prompt,
-      max_new_tokens: 500,
+    const { destination, preferences, days, budget } = req.body;
+
+    const prompt = `
+    Create a ${days}-day travel itinerary for ${destination}.
+    Preferences: ${preferences.join(", ")}
+    Budget: ₹${budget}
+    Return the response in JSON format like:
+    [
+      { "day": 1, "activities": ["...","..."] },
+      { "day": 2, "activities": ["...","..."] }
+    ]
+    `;
+
+    const response = await fetch("http://localhost:11434/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "llama3",
+        prompt,
+      }),
     });
 
-    // Parse AI response safely
-    let suggestions = [];
-    try {
-      suggestions = JSON.parse(response.generated_text);
-    } catch {
-      // fallback if parsing fails
-      suggestions = Array.from({ length: totalDays }, (_, i) => ({
-        day: i + 1,
-        activities: [`Explore ${destination}`, `Enjoy local food`]
-      }));
-    }
+    const data = await response.json();
 
-    res.json(suggestions);
+    // Ollama streams, so sometimes response is in data.response
+    res.json({ result: data.response || data });
   } catch (err) {
-    console.error("AI generation error:", err);
-    res.status(500).json({ error: "AI generation failed" });
+    console.error("Ollama API error:", err);
+    res.status(500).json({ error: "Failed to generate AI itinerary" });
   }
 });
 

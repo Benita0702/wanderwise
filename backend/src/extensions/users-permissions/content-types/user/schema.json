@@ -71,6 +71,12 @@
       "relation": "oneToMany",
       "target": "api::itinerary.itinerary",
       "mappedBy": "user"
+    },
+    "user_profile": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::user-profile.user-profile",
+      "inversedBy": "users_permissions_user"
     }
   }
 }

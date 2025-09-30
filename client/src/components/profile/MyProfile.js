@@ -1,342 +1,320 @@
-import { useContext, useState } from "react";
-import { AuthContext } from "../../context/AuthContext";
+// src/components/profile/MyProfile.js
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
 
 export default function MyProfile() {
-  const { user, setUser } = useContext(AuthContext);
-
-  const [name, setName] = useState(user?.username || "");
-  const [fullName, setFullName] = useState(user?.fullName || "");
-  const [phone, setPhone] = useState(user?.phone || "");
-  const [address, setAddress] = useState(user?.address || "");
-  const [birthday, setBirthday] = useState(user?.birthday || "");
-  const [gender, setGender] = useState(user?.gender || "");
-  const [profileImage, setProfileImage] = useState(user?.profileImage || null);
-  const [file, setFile] = useState(null);
+  const { token } = useAuth();
+  const [profile, setProfile] = useState(null);
+  const [form, setForm] = useState({
+    FullName: "",
+    Phone: "",
+    Address: "",
+    Birthday: "",
+    Gender: "",
+  });
+  const [profileImage, setProfileImage] = useState(null);
+  const [preview, setPreview] = useState(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [isEditing, setIsEditing] = useState(false);
 
-  const API_URL = "http://localhost:1337/api/userprofiles"; // adjust if needed
+  // ✅ Load user profile from Strapi
+  useEffect(() => {
+    if (!token) return;
 
-  // Handle file selection
-  const handleImageUpload = (e) => {
-    const fileSelected = e.target.files[0];
-    if (fileSelected) {
-      setFile(fileSelected);
-      setProfileImage(URL.createObjectURL(fileSelected)); // preview
-    }
-  };
+    const loadProfile = async () => {
+      try {
+        const res = await fetch(
+          // ✅ use /api + proper populate
+          "http://localhost:1337/api/users/me?populate[user_profile][populate][0]=Profile",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-  // Phone validation → only if filled
-  const validatePhone = (number) => {
-    if (!number) return true; // optional
-    return /^[0-9]{10}$/.test(number);
-  };
+        if (!res.ok) throw new Error(`HTTP error! ${res.status}`);
 
-  // Birthday validation → only if filled
-  const validateBirthday = (dateString) => {
-    if (!dateString) return true; // optional
-    const today = new Date();
-    const dob = new Date(dateString);
-    let age = today.getFullYear() - dob.getFullYear();
-    const m = today.getMonth() - dob.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-      age--;
-    }
-    return age >= 15;
-  };
+        const data = await res.json();
+        if (data?.user_profile) {
+          const profileData = data.user_profile;
+          setProfile(profileData);
 
-  // Save updated details
-  const handleSave = async () => {
-    if (!validatePhone(phone)) {
-      alert("Phone number must be exactly 10 digits if provided.");
-      return;
-    }
-    if (!validateBirthday(birthday)) {
-      alert("You must be at least 15 years old.");
-      return;
-    }
+          // Handle Strapi rich-text JSON for Address
+          let addressText = "";
+          if (Array.isArray(profileData.Address)) {
+            addressText = profileData.Address.map((block) =>
+              block.children.map((child) => child.text).join("")
+            ).join("\n");
+          } else {
+            addressText = profileData.Address || "";
+          }
 
-    try {
-      let uploadedImageId = user?.profileImage?.id || null;
+          setForm({
+            FullName: profileData.FullName || "",
+            Phone: profileData.Phone || "",
+            Address: addressText,
+            Birthday: profileData.Birthday || "",
+            Gender: profileData.Gender || "",
+          });
 
-      // Step 1: Upload image if new file selected
-      if (file) {
-        const formData = new FormData();
-        formData.append("files", file);
-
-        const uploadRes = await fetch("http://localhost:1337/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!uploadRes.ok) throw new Error("Image upload failed");
-
-        const uploadData = await uploadRes.json();
-        uploadedImageId = uploadData[0].id;
+          if (profileData.Profile?.data) {
+            setPreview(
+              "http://localhost:1337" +
+                profileData.Profile.data.attributes.url
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Error loading profile:", err);
       }
+    };
 
-      // Step 2: Update profile
-      const updatedUser = {
-        username: name,
-        fullName,
-        phone,
-        address,
-        birthday,
-        gender,
-        profileImage: uploadedImageId,
-      };
+    loadProfile();
+  }, [token]);
 
-      const response = await fetch(`${API_URL}/${user.id}`, {
+  // ✅ Handle text input change
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // ✅ Handle image change
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    setProfileImage(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  // ✅ Upload image to Strapi
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append("files", file);
+
+    const res = await fetch("http://localhost:1337/api/upload", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (data[0]) return data[0].id;
+    return null;
+  };
+
+  // ✅ Save profile
+  const handleSave = async () => {
+    if (!profile) {
+      alert("No profile found to update.");
+      return;
+    }
+
+    let imageId = profile.Profile?.data?.id || null;
+    if (profileImage) {
+      imageId = await uploadImage(profileImage);
+    }
+
+    const res = await fetch(
+      `http://localhost:1337/api/user-profiles/${profile.id}`,
+      {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ data: updatedUser }),
-      });
-
-      if (!response.ok) throw new Error("Failed to update profile");
-
-      const result = await response.json();
-      setUser(result.data);
-
-      alert("Profile updated successfully!");
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Update error:", error);
-      alert("Error updating profile");
-    }
-  };
-
-  // Password reset
-  const handlePasswordReset = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      alert("Please fill in all password fields.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      alert("New password and confirm password do not match.");
-      return;
-    }
-
-    try {
-      const res = await fetch("http://localhost:1337/api/auth/change-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user.jwt}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          currentPassword,
-          password: newPassword,
-          passwordConfirmation: confirmPassword,
+          data: {
+            ...form,
+            Profile: imageId ? imageId : null,
+          },
         }),
+      }
+    );
+
+    const updated = await res.json();
+    console.log("Profile updated:", updated);
+
+    if (updated?.data?.attributes?.Profile?.data) {
+      setPreview(
+        "http://localhost:1337" +
+          updated.data.attributes.Profile.data.attributes.url
+      );
+    }
+
+    setIsEditing(false);
+    alert("Profile updated successfully!");
+  };
+
+  // ✅ Cancel editing
+  const handleCancel = () => {
+    if (profile) {
+      setForm({
+        FullName: profile.FullName || "",
+        Phone: profile.Phone || "",
+        Address: profile.Address || "",
+        Birthday: profile.Birthday || "",
+        Gender: profile.Gender || "",
       });
+      if (profile.Profile?.data) {
+        setPreview(
+          "http://localhost:1337" +
+            profile.Profile.data.attributes.url
+        );
+      }
+    }
+    setIsEditing(false);
+  };
 
-      if (!res.ok) throw new Error("Password change failed");
+  // ✅ Change password
+  const handleChangePassword = async () => {
+    const res = await fetch("http://localhost:1337/api/auth/change-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        currentPassword,
+        password: newPassword,
+        passwordConfirmation: newPassword,
+      }),
+    });
 
+    if (res.ok) {
       alert("Password updated successfully!");
       setCurrentPassword("");
       setNewPassword("");
-      setConfirmPassword("");
-    } catch (error) {
-      console.error("Password reset error:", error);
-      alert("Error updating password");
+    } else {
+      const error = await res.json();
+      alert("Error: " + (error.error?.message || "Failed to update password"));
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 p-6 bg-white shadow-md rounded-2xl">
-      <h2 className="text-2xl font-bold mb-6 text-center text-blue-600">
-        My Profile
-      </h2>
+    <div className="max-w-2xl mx-auto p-6 bg-white shadow rounded-lg">
+      <h2 className="text-xl font-bold mb-4">My Profile</h2>
 
       {/* Profile Image */}
-      <div className="flex flex-col items-center mb-6">
-        <div className="relative w-32 h-32">
+      <div className="mb-4 text-center">
+        {preview ? (
           <img
-            src={
-              profileImage ||
-              "https://via.placeholder.com/150?text=Profile+Image"
-            }
+            src={preview}
             alt="Profile"
-            className="w-32 h-32 rounded-full object-cover border-2 border-gray-300"
+            className="w-32 h-32 rounded-full object-cover mx-auto"
           />
-          {isEditing && (
-            <label className="absolute bottom-0 right-0 bg-blue-600 text-white px-2 py-1 text-xs rounded-md cursor-pointer">
-              Upload
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
-              />
-            </label>
-          )}
-        </div>
-      </div>
-
-      {/* Profile Info */}
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-600">
-            Email (not editable)
-          </label>
-          <input
-            type="text"
-            value={user?.email || ""}
-            disabled
-            className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm p-2 cursor-not-allowed"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-600">
-            Username
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            disabled={!isEditing}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-600">
-            Full Name
-          </label>
-          <input
-            type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            disabled={!isEditing}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-600">
-            Phone Number
-          </label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            disabled={!isEditing}
-            maxLength="10"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-600">
-            Address
-          </label>
-          <textarea
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            disabled={!isEditing}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-600">
-            Birthday
-          </label>
-          <input
-            type="date"
-            value={birthday}
-            onChange={(e) => setBirthday(e.target.value)}
-            disabled={!isEditing}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-600">
-            Gender
-          </label>
-          <select
-            value={gender}
-            onChange={(e) => setGender(e.target.value)}
-            disabled={!isEditing}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2"
-          >
-            <option value="">Select Gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex justify-end mt-6 space-x-4">
-        {!isEditing ? (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Edit Profile
-          </button>
         ) : (
-          <>
-            <button
-              onClick={() => setIsEditing(false)}
-              className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-500"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              Save Changes
-            </button>
-          </>
+          <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mx-auto">
+            <span className="text-gray-500">No Image</span>
+          </div>
+        )}
+        {isEditing && (
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="mt-2"
+          />
         )}
       </div>
 
-      {/* Password Reset Section */}
-      <div className="mt-10 p-4 border-t border-gray-200">
-        <h3 className="text-lg font-semibold mb-4 text-red-600">
-          Change Password
-        </h3>
-        <div className="space-y-4">
-          <input
-            type="password"
-            placeholder="Current Password"
-            value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm p-2"
-          />
-          <input
-            type="password"
-            placeholder="New Password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm p-2"
-          />
-          <input
-            type="password"
-            placeholder="Confirm New Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="block w-full rounded-md border-gray-300 shadow-sm p-2"
-          />
+      {/* Profile Fields */}
+      <div className="space-y-3">
+        <input
+          type="text"
+          name="FullName"
+          value={form.FullName}
+          onChange={handleChange}
+          disabled={!isEditing}
+          placeholder="Full Name"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="text"
+          name="Phone"
+          value={form.Phone}
+          onChange={handleChange}
+          disabled={!isEditing}
+          placeholder="Phone Number"
+          className="w-full p-2 border rounded"
+        />
+        <textarea
+          name="Address"
+          value={form.Address}
+          onChange={handleChange}
+          disabled={!isEditing}
+          placeholder="Address"
+          className="w-full p-2 border rounded"
+        />
+        <input
+          type="date"
+          name="Birthday"
+          value={form.Birthday}
+          onChange={handleChange}
+          disabled={!isEditing}
+          className="w-full p-2 border rounded"
+        />
+        <select
+          name="Gender"
+          value={form.Gender}
+          onChange={handleChange}
+          disabled={!isEditing}
+          className="w-full p-2 border rounded"
+        >
+          <option value="">Select Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Others">Others</option>
+        </select>
+      </div>
+
+      {/* Buttons */}
+      {!isEditing ? (
+        <button
+          onClick={() => setIsEditing(true)}
+          className="mt-4 bg-gray-600 text-white px-4 py-2 rounded"
+        >
+          Edit Profile
+        </button>
+      ) : (
+        <div className="mt-4 space-x-2">
           <button
-            onClick={handlePasswordReset}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            onClick={handleSave}
+            className="bg-blue-600 text-white px-4 py-2 rounded"
           >
-            Update Password
+            Save Changes
+          </button>
+          <button
+            onClick={handleCancel}
+            className="bg-gray-400 text-white px-4 py-2 rounded"
+          >
+            Cancel
           </button>
         </div>
+      )}
+
+      {/* Change Password */}
+      <div className="mt-6">
+        <h3 className="font-semibold mb-2">Change Password</h3>
+        <input
+          type="password"
+          placeholder="Current Password"
+          value={currentPassword}
+          onChange={(e) => setCurrentPassword(e.target.value)}
+          className="w-full p-2 border rounded mb-2"
+        />
+        <input
+          type="password"
+          placeholder="New Password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          className="w-full p-2 border rounded mb-2"
+        />
+        <button
+          onClick={handleChangePassword}
+          className="bg-red-600 text-white px-4 py-2 rounded"
+        >
+          Update Password
+        </button>
       </div>
     </div>
   );

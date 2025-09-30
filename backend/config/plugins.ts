@@ -12,8 +12,8 @@ export default ({env}) => ({
       },
       settings: {
         defaultFrom: 'support@tripnexa.com',
-        defaultReplyTo: 'hritambh9@gmail.com',
-      },
+        defaultReplyTo: 'benitadsouza07@gmail.com',
+      },  
     },
   },
 });
