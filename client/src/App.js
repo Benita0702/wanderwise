@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import AIItineraryPlanner from "./pages/AIItineraryPlanner";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -25,6 +26,7 @@ import MyBooking from "./components/profile/MyBooking";
 import OfferDetails from "./pages/OfferDetails";
 import MyProfile from "./components/profile/MyProfile";
 import { AuthProvider } from "./context/AuthContext";
+
 
 
 function Layout({ children }) {
@@ -63,6 +65,7 @@ function App() {
             <Route path="/my-bookings" element={<MyBooking />} />
             <Route path="/offers/:slug" element={<OfferDetails />} />
             <Route path="/my-profile" element={<MyProfile />} />
+            <Route path="/ai-itinerary-planner" element={<AIItineraryPlanner />} />
 
 
 

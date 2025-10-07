@@ -66,7 +66,7 @@ function PackageDetailPage() {
     const fetchPackage = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:1337/api/tour-packages?populate=*`
+          "http://localhost:1337/api/tour-packages?populate=Images&pagination[limit]=100"
         );
 
         const item = response.data.data.find(

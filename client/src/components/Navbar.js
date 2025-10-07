@@ -14,7 +14,7 @@ export default function Navbar() {
   const navigation = [
     { name: "Home", href: "/" },
     { name: "Packages", href: "/packages" },
-    { name: "Planner", href: "/planner" },
+    { name: "AI Itinerary Planner", href: "/ai-itinerary-planner" },
     { name: "Blog", href: "/blogs" },
     { name: "About Us", href: "/about" },
     { name: "Contact", href: "/contact" },
