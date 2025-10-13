@@ -44,7 +44,7 @@ export default function MyProfile() {
     if (profileData.Profile?.data) {
       setPreview(
         "http://localhost:1337" +
-          profileData.Profile.data.attributes.url
+        profileData.Profile.data.attributes.url
       );
     } else {
       setPreview(null);
@@ -61,7 +61,7 @@ export default function MyProfile() {
       setIsLoading(true);
       try {
         const res = await fetch(
-          "http://localhost:1337/api/users/me?populate[user_profile][populate][0]=Profile",
+          "http://localhost:1337/api/users/me?populate=user_profile.Profile",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -109,8 +109,8 @@ export default function MyProfile() {
     });
 
     if (!res.ok) {
-        console.error("Image upload failed");
-        return null;
+      console.error("Image upload failed");
+      return null;
     }
 
     const data = await res.json();
@@ -124,7 +124,7 @@ export default function MyProfile() {
     }
 
     const dataToSave = { ...form, Profile: imageId };
-    
+
     const url = profile
       ? `http://localhost:1337/api/user-profiles/${profile.id}`
       : `http://localhost:1337/api/user-profiles`;
@@ -142,12 +142,12 @@ export default function MyProfile() {
       });
 
       if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error?.message || "Failed to save profile");
+        const errorData = await res.json();
+        throw new Error(errorData.error?.message || "Failed to save profile");
       }
-      
+
       const updated = await res.json();
-      
+
       if (updated.data) {
         const newProfile = { id: updated.data.id, ...updated.data.attributes };
         setProfile(newProfile);
@@ -169,34 +169,34 @@ export default function MyProfile() {
 
   const handleChangePassword = async () => {
     if (newPassword.length < 6) {
-        alert("New password must be at least 6 characters long.");
-        return;
+      alert("New password must be at least 6 characters long.");
+      return;
     }
-    
-    try {
-        const res = await fetch("http://localhost:1337/api/auth/change-password", {
-            method: "POST",
-            headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-            currentPassword,
-            password: newPassword,
-            passwordConfirmation: newPassword,
-            }),
-        });
 
-        if (res.ok) {
-            alert("Password updated successfully!");
-            setCurrentPassword("");
-            setNewPassword("");
-        } else {
-            const error = await res.json();
-            throw new Error(error.error?.message || "Failed to update password");
-        }
-    } catch(err) {
-        alert("Error: " + err.message);
+    try {
+      const res = await fetch("http://localhost:1337/api/auth/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          currentPassword,
+          password: newPassword,
+          passwordConfirmation: newPassword,
+        }),
+      });
+
+      if (res.ok) {
+        alert("Password updated successfully!");
+        setCurrentPassword("");
+        setNewPassword("");
+      } else {
+        const error = await res.json();
+        throw new Error(error.error?.message || "Failed to update password");
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
     }
   };
 
