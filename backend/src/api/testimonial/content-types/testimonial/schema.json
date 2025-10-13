@@ -31,6 +31,18 @@
         "videos",
         "audios"
       ]
+    },
+    "tour_packages": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::tour-package.tour-package",
+      "inversedBy": "testimonials"
+    },
+    "user_profiles": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::user-profile.user-profile",
+      "inversedBy": "testimonials"
     }
   }
 }

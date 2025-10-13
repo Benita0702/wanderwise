@@ -40,7 +40,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t border-gray-700 pt-8 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} Wanderwise. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} TripNexa. All rights reserved.</p>
         </div>
       </div>
     </footer>

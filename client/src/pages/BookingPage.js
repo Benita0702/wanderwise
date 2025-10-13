@@ -3,13 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
 
-function MyBookingsPage() {
+function BookingPage() {
   const { packageId, startDate } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
   const [step, setStep] = useState(1);
-  const [packageData, setPackageData] = useState(null);
+  const [packageData, setPackageData] = useState(null); // Flat package info from Strapi
+
+
   const [loading, setLoading] = useState(true);
 
   const [travelers, setTravelers] = useState([
@@ -30,13 +32,26 @@ function MyBookingsPage() {
 
   useEffect(() => {
     const fetchPackage = async () => {
+      if (!packageId) {
+        setLoading(false);
+        return;
+      }
       try {
         const res = await axios.get(
-          `http://localhost:1337/api/packages/${packageId}?populate=*`
+          `http://localhost:1337/api/tour-packages?populate=Images&pagination[limit]=100`
         );
-        setPackageData(res.data.data);
+        console.log("Full Packages API Response:", res.data.data); // 🔍 Debug: Check array structure
+        const item = res.data.data.find((pkg) => pkg.id === parseInt(packageId));
+        if (!item) {
+          console.warn("Package not found for ID:", packageId);
+          setPackageData(null);
+          return;
+        }
+        console.log("Fetched Package:", item); // 🔍 Debug: Verify Price, Title, etc. (exact from Strapi)
+        setPackageData(item); // Flat object: { id, Price, Title, Duration_days, ... }
       } catch (err) {
         console.error("Error fetching package:", err);
+        setPackageData(null);
       } finally {
         setLoading(false);
       }
@@ -44,15 +59,18 @@ function MyBookingsPage() {
     fetchPackage();
   }, [packageId]);
 
-  const basePrice = packageData?.attributes?.price || 15000;
-  const taxes = Math.round(basePrice * 0.1);
-  const addonPrices = { flight: 8000, insurance: 500, car: 3000 };
+
+  // Use exact package price from Strapi (flat access, no hardcoded fallback)
+  const basePricePerPerson = Number(packageData?.Price ?? 0); // Matches PackageDetailPage: item.Price
+  const packageCost = basePricePerPerson * travelers.length; // Per person * travelers
+  const taxes = Math.round(packageCost * 0.1); // 10% tax on total package cost
+  const addonPrices = { flight: 8000, insurance: 500, car: 3000 }; // Fixed per booking
 
   const calcTotal = () => {
     const addonsTotal = Object.keys(addons)
       .filter((k) => addons[k])
       .reduce((sum, k) => sum + addonPrices[k], 0);
-    return basePrice + taxes + addonsTotal;
+    return packageCost + taxes + addonsTotal;
   };
 
   const updateTraveler = (idx, field, value) => {
@@ -82,6 +100,11 @@ function MyBookingsPage() {
           return false;
         }
       }
+      if (basePricePerPerson === 0) {
+        alert("Package price not available. Please go back and select a valid package.");
+        navigate(-1); // Redirect back
+        return false;
+      }
     }
     if (step === 3) {
       if (payment.method === "card") {
@@ -110,7 +133,7 @@ function MyBookingsPage() {
         Travelers_count: travelers.length,
         Start_date: startDate, // Use the startDate from the URL
         Add_ons: addons,
-        Total_price: calcTotal(),
+        Total_price: calcTotal(), // Uses real price + travelers + addons
         Booking_status: "Confirmed",
         Payment_method: payment.method,
         tour_package: packageId,
@@ -130,6 +153,22 @@ function MyBookingsPage() {
 
   const steps = ["Traveler Details", "Add-ons", "Payment"];
 
+  if (loading) {
+    return <div className="max-w-7xl mx-auto px-4 py-8 text-center">Loading package...</div>;
+  }
+
+  if (!packageData) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8 text-center">
+        <h1 className="text-2xl font-bold mb-4">Package Not Found</h1>
+        <p className="text-gray-600 mb-4">Invalid or missing package ID.</p>
+        <button onClick={() => navigate("/packages")} className="px-4 py-2 bg-blue-600 text-white rounded">
+          Back to Packages
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* LEFT */}
@@ -143,11 +182,7 @@ function MyBookingsPage() {
 
         <h1 className="text-3xl font-bold mb-2">Complete Your Booking</h1>
         <p className="text-gray-600 mb-6">
-          {loading
-            ? "Loading package..."
-            : packageData
-            ? `${packageData.attributes.title} - ${packageData.attributes.duration}`
-            : "Package not found"}
+          {packageData ? `${packageData.Title} - ${packageData.Duration_days} days` : "Package not found"}
         </p>
 
         {/* Stepper */}
@@ -360,14 +395,12 @@ function MyBookingsPage() {
       {/* RIGHT (Summary) */}
       <div className="bg-white p-6 rounded-lg shadow h-fit">
         <h2 className="text-xl font-semibold mb-4">Booking Summary</h2>
-        <p className="font-medium">
-          {packageData ? packageData.attributes.title : "Selected Package"}
-        </p>
+        <p className="font-medium">{packageData?.Title || "Selected Package"}</p>
         <p>
           Package ({travelers.length} traveler
-          {travelers.length > 1 ? "s" : ""}) ₹{basePrice}
+          {travelers.length > 1 ? "s" : ""}) ₹{packageCost.toLocaleString()}
         </p>
-        <p>Taxes & fees ₹{taxes}</p>
+        <p>Taxes & fees ₹{taxes.toLocaleString()}</p>
         {Object.keys(addons).map(
           (k) =>
             addons[k] && (
@@ -385,4 +418,4 @@ function MyBookingsPage() {
   );
 }
 
-export default MyBookingsPage;
+export default BookingPage;

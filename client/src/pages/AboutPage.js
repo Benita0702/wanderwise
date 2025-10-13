@@ -34,7 +34,7 @@ export default function AboutPage() {
             transition={{ duration: 0.5 }}
             className="text-4xl md:text-5xl font-extrabold text-gray-900"
           >
-            About Wanderwise
+            About TripNexa
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -53,7 +53,7 @@ export default function AboutPage() {
           <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-4 flex items-center"><Compass className="h-8 w-8 mr-3 text-blue-600" /> Our Story</h2>
             <p className="text-gray-600 text-lg mb-4">
-              Wanderwise was born from a simple passion: to make travel accessible and enjoyable for everyone. Frustrated by the hours spent planning and the generic advice found online, our founders set out to create a smarter, more intuitive way to explore the world.
+              TripNexa was born from a simple passion: to make travel accessible and enjoyable for everyone. Frustrated by the hours spent planning and the generic advice found online, our founders set out to create a smarter, more intuitive way to explore the world.
             </p>
             <p className="text-gray-600 text-lg">
               We combine cutting-edge AI with the expertise of seasoned travel specialists to build personalized adventures that match your unique style and budget.
@@ -85,7 +85,7 @@ export default function AboutPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 flex items-center justify-center"><Users className="h-8 w-8 mr-3 text-blue-600" /> Meet the Team</h2>
-            <p className="mt-2 text-lg text-gray-600">The passionate explorers behind Wanderwise.</p>
+            <p className="mt-2 text-lg text-gray-600">The passionate explorers behind TripNexa.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
             {teamMembers.map(member => (

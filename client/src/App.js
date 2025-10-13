@@ -1,6 +1,5 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import AIItineraryPlanner from "./pages/AIItineraryPlanner";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -37,7 +36,7 @@ function Layout({ children }) {
     <>
       {!hideLayout && <Navbar />}
       {/* Only add pt-16 if NOT home page */}
-      <div className={!hideLayout && location.pathname !== "/" ? "pt-16" : ""}>
+      <div>
         {children}
       </div>
       {!hideLayout && <Footer />}
@@ -65,7 +64,6 @@ function App() {
             <Route path="/my-bookings" element={<MyBooking />} />
             <Route path="/offers/:slug" element={<OfferDetails />} />
             <Route path="/my-profile" element={<MyProfile />} />
-            <Route path="/ai-itinerary-planner" element={<AIItineraryPlanner />} />
 
 
 

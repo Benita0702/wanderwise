@@ -6,7 +6,7 @@ import { SpecialOffers } from "../components/home/SpecialOffers";
 import { TravelStories } from "../components/home/TravelStories";
 import { Testimonials } from "../components/home/Testimonials";
 import  ChatbotButton  from "../components/home/ChatbotButton";
-import { BudgetOptimizerFloating } from "../components/home/BudgetOptimizerFloating";
+import FloatingBudgetOptimizer from "../components/FloatingBudgetOptimizer";
 import renderRichText from "../utils/renderRichText";
 
 export default function HomePage() {
@@ -46,7 +46,7 @@ export default function HomePage() {
       <SpecialOffers offers={offers} renderRichText={renderRichText} />
       <TravelStories blogs={blogs} renderRichText={renderRichText} />
       <Testimonials testimonials={testimonials} renderRichText={renderRichText} />
-      <BudgetOptimizerFloating />
+      <FloatingBudgetOptimizer />
       <ChatbotButton />
     </div>
   );

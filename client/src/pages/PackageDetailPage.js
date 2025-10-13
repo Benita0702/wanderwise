@@ -1,12 +1,15 @@
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Heart, ChevronLeft, ChevronRight, Save, Share2, ArrowLeft, } from "lucide-react";
-import React, { useEffect, useState, useContext } from "react"; // 👈 Add useContext
-import { AuthContext } from "../context/AuthContext"; // 👈 Add this import
+import { Heart, ChevronLeft, ChevronRight, Save, Share2, ArrowLeft } from "lucide-react";
+import React, { useEffect, useState, useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
+import MultiStepModal from "../components/MultiStepModal";
 
 function PackageDetailPage() {
   const { packageId } = useParams();
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+
   const [packageData, setPackageData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
@@ -14,91 +17,60 @@ function PackageDetailPage() {
   const [date, setDate] = useState("");
   const [activeTab, setActiveTab] = useState("overview");
   const [currentImage, setCurrentImage] = useState(0);
-  const { user } = useContext(AuthContext); // 👈 Add this line
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const [newReview, setNewReview] = useState("");
+  const [reviews, setReviews] = useState([]);
 
-  // helpers to parse Strapi rich text / strings into arrays or text
+  const todayISO = new Date().toISOString().split("T")[0];
+
+  // --- Helper functions ---
   const parseRichTextToLines = (input) => {
     if (!input) return [];
-    // if already array of blocks (Strapi rich text)
     if (Array.isArray(input)) {
       return input
         .map((blk) => {
-          if (blk?.children && Array.isArray(blk.children)) {
-            return blk.children.map((c) => c.text || "").join("").trim();
-          }
+          if (blk?.children) return blk.children.map(c => c.text || "").join("").trim();
           if (typeof blk === "string") return blk.trim();
           if (blk?.text) return blk.text;
-          // fallback
           return "";
         })
         .filter(Boolean);
     }
     if (typeof input === "string") {
-      // remove HTML tags if any
-      const cleaned = input.replace(/<\/?[^>]+(>|$)/g, "");
-      // split on newlines
-      return cleaned
-        .split(/\r?\n/)
-        .map((s) => s.trim())
-        .filter(Boolean);
+      return input.replace(/<\/?[^>]+(>|$)/g, "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
     }
-    // unknown structure
     return [];
   };
 
   const parseInclusionsExclusions = (input) => {
     if (!input) return [];
-    if (Array.isArray(input)) {
-      return input.map((i) => (typeof i === "string" ? i.trim() : String(i))).filter(Boolean);
-    }
+    if (Array.isArray(input)) return input.map(i => String(i).trim()).filter(Boolean);
     if (typeof input === "string") {
-      // try newline split first (Strapi often returns newline separated)
-      const byNewline = input.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-      if (byNewline.length > 1) return byNewline;
-      // fallback to comma separated
-      return input.split(",").map((s) => s.trim()).filter(Boolean);
+      const byNewline = input.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      return byNewline.length > 1 ? byNewline : input.split(",").map(s => s.trim()).filter(Boolean);
     }
     return [];
   };
 
+  // --- Fetch Package ---
   useEffect(() => {
     const fetchPackage = async () => {
       try {
-        const response = await axios.get(
+        const res = await axios.get(
           "http://localhost:1337/api/tour-packages?populate=Images&pagination[limit]=100"
         );
-
-        const item = response.data.data.find(
-          (pkg) => pkg.id === parseInt(packageId)
-        );
+        const item = res.data.data.find(pkg => pkg.id === parseInt(packageId));
         if (!item) {
           setPackageData(null);
           return;
         }
-        
 
-        // DESCRIPTION: join rich text blocks into a paragraph
-        let descriptionText = "No description provided";
-        if (Array.isArray(item.Description)) {
-          descriptionText = item.Description
-            .map((d) =>
-              Array.isArray(d.children)
-                ? d.children.map((c) => c.text || "").join(" ")
-                : typeof d.text === "string"
-                ? d.text
-                : ""
-            )
-            .join("\n")
-            .trim();
-        } else if (typeof item.Description === "string") {
-          descriptionText = item.Description;
-        }
+        const descriptionText = Array.isArray(item.Description)
+          ? item.Description.map(d => Array.isArray(d.children) ? d.children.map(c => c.text || "").join(" ") : d.text || "").join("\n").trim()
+          : item.Description || "No description provided";
 
-        // ITINERARY: convert to lines array (works with rich-text blocks or plain string)
-        const itineraryLines = parseRichTextToLines(item.Itinerary || item.Itinerary_blocks || item.Itinerary || "");
-
-        // INCLUSIONS / EXCLUSIONS: handle array or string
+        const itineraryLines = parseRichTextToLines(item.Itinerary || item.Itinerary_blocks || "");
         const inclusionsArr = parseInclusionsExclusions(item.Inclusions);
         const exclusionsArr = parseInclusionsExclusions(item.Exclusions);
 
@@ -106,20 +78,16 @@ function PackageDetailPage() {
           id: item.id,
           title: item.Title?.replace(/“|”/g, "") || "Untitled Package",
           price: item.Price || 0,
-          oldPrice: item.Discount || null, // if you store original price or discount value adjust accordingly
+          oldPrice: item.Discount || null,
           duration: item.Duration_days || "N/A",
           type: item.Package_type || "N/A",
           description: descriptionText,
           inclusions: inclusionsArr,
           exclusions: exclusionsArr,
           itinerary: itineraryLines,
-          images:
-              Array.isArray(item.Images) && item.Images.length > 0
-              ? item.Images.map((img) => `http://localhost:1337${img.url}`)
-              : ["https://placehold.co/300x200?text=No+Image"],
-
-          rating: item.Rating || null,
-          reviews: item.reviews || null, // if you have reviews relation, keep it; otherwise null
+          images: Array.isArray(item.Images) && item.Images.length > 0
+            ? item.Images.map(img => `http://localhost:1337${img.url}`)
+            : ["https://placehold.co/300x200?text=No+Image"],
         });
       } catch (err) {
         console.error("Error fetching package:", err);
@@ -135,325 +103,249 @@ function PackageDetailPage() {
     setWishlist(Array.isArray(stored) ? stored : []);
   }, [packageId]);
 
+  // --- Fetch Testimonials ---
+const fetchTestimonials = async () => {
+  try {
+    const res = await axios.get("http://localhost:1337/api/testimonials", {
+      params: {
+        "filters[tour_packages][id][$eq]": packageId,
+        "populate[0]": "user_profiles",
+        "populate[1]": "tour_packages",
+      },
+      headers: user?.token ? { Authorization: `Bearer ${user.token}` } : {},
+    });
+    setReviews(res.data.data || []);
+  } catch (err) {
+    console.error("Error fetching testimonials:", err);
+    if (err.response?.status === 401) {
+      console.warn("Testimonials are restricted. Please log in to view.");
+      setReviews([]);
+    }
+  }
+};
+
+// --- Fetch on load ---
+useEffect(() => {
+  fetchTestimonials();
+}, [packageId, user]);
+
+
+  // --- Wishlist ---
   const toggleWishlist = () => {
     if (!packageData) return;
     let updated = [...wishlist];
-    const exists = updated.find((p) => p.id === packageData.id);
+    const exists = updated.find(p => p.id === packageData.id);
 
-    if (exists) {
-      updated = updated.filter((p) => p.id !== packageData.id);
-    } else {
-      updated.push({
-        id: packageData.id,
-        title: packageData.title,
-        price: packageData.price,
-        image: packageData.images?.[0] || "",
-      });
-    }
+    if (exists) updated = updated.filter(p => p.id !== packageData.id);
+    else updated.push({ id: packageData.id, title: packageData.title, price: packageData.price, image: packageData.images[0] });
 
     setWishlist(updated);
     localStorage.setItem("wishlist", JSON.stringify(updated));
   };
 
+  // --- Add / Delete Review ---
+  const addTestimonial = async () => {
+  if (!user) return alert("You must be logged in to add a review");
+  if (!newReview.trim()) return;
+
+  try {
+    const res = await axios.post("http://localhost:1337/api/testimonials", {
+      data: { comment: newReview.trim(), tour_package: parseInt(packageId, 10), user: user.id }
+    }, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    });
+
+    setReviews([...reviews, res.data.data]);
+    setNewReview("");
+  } catch (err) {
+    console.error("Error adding testimonial:", err);
+    alert("Failed to add review. Make sure your Strapi permissions allow adding testimonials.");
+  }
+};
+
+
+  const deleteTestimonial = async (testimonialId, testimonialUserId) => {
+  if (!user || user.id !== testimonialUserId) return alert("You can only delete your own reviews");
+
+  try {
+    await axios.delete(`http://localhost:1337/api/testimonials/${testimonialId}`, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    });
+    setReviews(reviews.filter(r => r.id !== testimonialId));
+  } catch (err) {
+    console.error("Error deleting testimonial:", err);
+    alert("Failed to delete review. Check your Strapi permissions.");
+  }
+};
+
+
+  // --- Image Slider ---
+  const nextImage = () => setCurrentImage(prev => (prev + 1) % packageData.images.length);
+  const prevImage = () => setCurrentImage(prev => prev === 0 ? packageData.images.length - 1 : prev - 1);
+
+  // --- Booking / Share / Save ---
+  const handleBookNow = () => user ? navigate(`/booking/${packageId}`) : navigate("/login");
+  const handleSave = () => alert("Package saved!");
+  const handleShare = () => { navigator.clipboard.writeText(window.location.href); alert("Package link copied!"); };
+
   if (loading) return <p className="text-center mt-10">Loading package details...</p>;
   if (!packageData) return <p className="text-center mt-10">Package not found.</p>;
 
-  const isWishlisted = wishlist.some((p) => p.id === packageData.id);
-
-  // Price calculation (per person * travelers)
-  const packageCost = Number(packageData.price || 0) * Number(travelers || 1);
-  const taxes = Math.round(packageCost * 0.10); // example 18% tax
+  const isWishlisted = wishlist.some(p => p.id === packageData.id);
+  const packageCost = Number(packageData.price) * Number(travelers);
+  const taxes = Math.round(packageCost * 0.10);
   const total = packageCost + taxes;
-
-  // today for date min (prevent past)
-  const todayISO = new Date().toISOString().split("T")[0];
-
-  // whether to show reviews tab
-  const hasReviews = Array.isArray(packageData.reviews) && packageData.reviews.length > 0;
-
-  const nextImage = () => {
-    setCurrentImage((prev) => (prev + 1) % packageData.images.length);
-  };
-  const prevImage = () => {
-    setCurrentImage((prev) =>
-      prev === 0 ? packageData.images.length - 1 : prev - 1
-    );
-  };
-
-   // Book Now with login check
-  const handleBookNow = () => {
-    // ✅ **FIX: Check for the user from context instead of localStorage**
-    if (!user) {
-      navigate("/login");
-    } else {
-      navigate(`/booking/${packageId}`);
-    }
-  };
-
-  const handleSave = () => alert("Package saved!");
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    alert("Package link copied to clipboard!");
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* ✅ Back Button */}
-      <button
-        onClick={() => navigate("/packages")}
-        className="flex items-center text-gray-600 hover:text-blue-600 mb-4"
-      >
+      <button onClick={() => navigate("/packages")} className="flex items-center text-gray-600 hover:text-blue-600 mb-4">
         <ArrowLeft className="w-5 h-5 mr-2" /> Back to Packages
       </button>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* LEFT: main content (2 cols) */}
+        {/* LEFT: Package Details */}
         <div className="md:col-span-2">
-          {/* header */}
+          {/* Header */}
           <div className="flex items-start justify-between">
             <div>
               <h1 className="text-3xl font-bold">{packageData.title}</h1>
-              <div className="text-gray-600 mt-1">
-                {packageData.duration} days • {packageData.type}
-              </div>
+              <div className="text-gray-600 mt-1">{packageData.duration} days • {packageData.type}</div>
             </div>
-
-            <div>
-              <button
-                onClick={toggleWishlist}
-                className="p-2 rounded-full bg-white shadow hover:scale-110 transition"
-                aria-label="Toggle wishlist"
-              >
-                <Heart
-                  className={`h-7 w-7 ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400"}`}
-                />
-              </button>
-            </div>
+            <button onClick={toggleWishlist} className="p-2 rounded-full bg-white shadow hover:scale-110 transition">
+              <Heart className={`h-7 w-7 ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400"}`} />
+            </button>
           </div>
 
-
-          {/* ✅ Image Slider */}
+          {/* Image Slider */}
           <div className="mt-6 relative rounded-xl overflow-hidden shadow-sm">
-            <img
-              src={packageData.images[currentImage]}  
-              alt={packageData.title}
-              className="w-full object-contain rounded-xl"
-            />
-            {packageData.images.length > 1 && (
-              <>
-                <button
-                  onClick={prevImage}
-                  className="absolute top-1/2 left-4 -translate-y-1/2 bg-white p-2 rounded-full shadow"
-                >
-                  <ChevronLeft className="w-6 h-6" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute top-1/2 right-4 -translate-y-1/2 bg-white p-2 rounded-full shadow"
-                >
-                  <ChevronRight className="w-6 h-6" />
-                </button>
-              </>
-            )}
+            <img src={packageData.images[currentImage]} alt={packageData.title} className="w-full object-contain rounded-xl" />
+            {packageData.images.length > 1 && <>
+              <button onClick={prevImage} className="absolute top-1/2 left-4 -translate-y-1/2 bg-white p-2 rounded-full shadow"><ChevronLeft className="w-6 h-6" /></button>
+              <button onClick={nextImage} className="absolute top-1/2 right-4 -translate-y-1/2 bg-white p-2 rounded-full shadow"><ChevronRight className="w-6 h-6" /></button>
+            </>}
           </div>
 
-          {/* tabs */}
+          {/* Tabs */}
           <div className="mt-6 border-b border-gray-200">
             <nav className="flex space-x-6">
-              <button
-                onClick={() => setActiveTab("overview")}
-                className={`py-3 ${activeTab === "overview" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-600"}`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab("itinerary")}
-                className={`py-3 ${activeTab === "itinerary" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-600"}`}
-              >
-                Itinerary
-              </button>
-              <button
-                onClick={() => setActiveTab("inclusions")}
-                className={`py-3 ${activeTab === "inclusions" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-600"}`}
-              >
-                Inclusions
-              </button>
-              {hasReviews && (
-                <button
-                  onClick={() => setActiveTab("reviews")}
-                  className={`py-3 ${activeTab === "reviews" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-600"}`}
-                >
-                  Reviews
-                </button>
-              )}
+              {["overview", "itinerary", "inclusions", "reviews"].map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab)}
+                  className={`py-3 ${activeTab===tab?"text-blue-600 border-b-2 border-blue-600":"text-gray-600"}`}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>
+              ))}
             </nav>
           </div>
 
-          {/* tab content */}
+          {/* Tab Content */}
           <div className="mt-6 space-y-6">
-            {activeTab === "overview" && (
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h2 className="text-2xl font-semibold mb-3">About This Package</h2>
-                <p className="text-gray-700 whitespace-pre-line">{packageData.description}</p>
+            {activeTab==="overview" && <div className="bg-white rounded-lg p-6 shadow-sm"><p className="text-gray-700 whitespace-pre-line">{packageData.description}</p></div>}
+            {activeTab==="itinerary" && <div className="bg-white rounded-lg p-6 shadow-sm">
+              {packageData.itinerary.length===0 ? <p>No itinerary details provided.</p> : packageData.itinerary.map((line, idx) => (
+                <div key={idx} className="border rounded-md p-4 mb-3">{line}</div>
+              ))}
+            </div>}
+            {activeTab==="inclusions" && <div className="bg-white rounded-lg p-6 shadow-sm grid md:grid-cols-2 gap-6">
+              <div><h3 className="font-semibold mb-2">Inclusions</h3>
+                {packageData.inclusions.length===0 ? <p>No inclusions.</p> : <ul>{packageData.inclusions.map((i,j)=><li key={j}>{i}</li>)}</ul>}
               </div>
-            )}
-
-            {activeTab === "itinerary" && (
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h2 className="text-2xl font-semibold mb-4">Day-wise Itinerary</h2>
-                {packageData.itinerary.length === 0 && (
-                  <p className="text-gray-600">No itinerary details provided.</p>
-                )}
-                {packageData.itinerary.map((line, idx) => (
-                  <div key={idx} className="border rounded-md p-4 mb-3">
-                    {/* If the line already contains "Day", show as-is; otherwise number it */}
-                    {/day\s*\d+/i.test(line) ? (
-                      <div className="text-gray-800">{line}</div>
-                    ) : (
-                      <div>
-                        <strong>Day {idx + 1}:</strong> <span className="text-gray-700 ml-2">{line}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+              <div><h3 className="font-semibold mb-2">Exclusions</h3>
+                {packageData.exclusions.length===0 ? <p>No exclusions.</p> : <ul>{packageData.exclusions.map((i,j)=><li key={j}>{i}</li>)}</ul>}
               </div>
-            )}
+            </div>}
+            {activeTab === "reviews" && (
+  <div className="bg-white rounded-lg p-6 shadow-sm">
+    {reviews.length === 0 ? (
+      <p>No reviews yet.</p>
+    ) : (
+      reviews
+  .filter(r => r && r.attributes) // ✅ filter out bad or empty items
+  .map(r => {
+    const comment = r.attributes?.comment || "No comment provided";
+    const reviewUser =
+      r.attributes?.user_profiles?.data?.attributes?.name ||
+      r.attributes?.user?.data?.attributes?.name ||
+      "Guest";
+    const reviewUserId =
+      r.attributes?.user_profiles?.data?.id ||
+      r.attributes?.user?.data?.id;
 
-            {activeTab === "inclusions" && (
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h2 className="text-2xl font-semibold mb-4">Inclusions & Exclusions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="font-semibold mb-3">Inclusions</h3>
-                    {packageData.inclusions.length === 0 ? (
-                      <p className="text-gray-600">No inclusions provided.</p>
-                    ) : (
-                      <ul className="list-disc list-inside text-gray-700">
-                        {packageData.inclusions.map((inc, i) => (
-                          <li key={i}>{inc}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
+    return (
+      <div key={r.id} className="border-b pb-4 mb-4 flex justify-between">
+        <div>
+          <div className="font-semibold">{reviewUser}</div>
+          <div>{comment}</div>
+        </div>
+        {user?.id === reviewUserId && (
+          <button
+            onClick={() => deleteTestimonial(r.id, reviewUserId)}
+            className="text-red-500 text-sm"
+          >
+            Delete
+          </button>
+        )}
+      </div>
+    );
+  })
 
-                  <div>
-                    <h3 className="font-semibold mb-3">Exclusions</h3>
-                    {packageData.exclusions.length === 0 ? (
-                      <p className="text-gray-600">No exclusions provided.</p>
-                    ) : (
-                      <ul className="list-disc list-inside text-gray-700">
-                        {packageData.exclusions.map((exc, i) => (
-                          <li key={i}>{exc}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
+    )}
 
-            {activeTab === "reviews" && hasReviews && (
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h2 className="text-2xl font-semibold mb-4">Customer Reviews</h2>
-                {packageData.reviews.map((r, i) => (
-                  <div key={i} className="border-b pb-4 mb-4">
-                    <div className="font-semibold">{r.user || "Guest"}</div>
-                    <div className="text-gray-700">{r.comment}</div>
-                  </div>
-                ))}
-              </div>
-            )}
+    {user ? (
+      <>
+        <textarea
+          value={newReview}
+          onChange={e => setNewReview(e.target.value)}
+          className="w-full border rounded-md px-3 py-2 mb-2"
+          placeholder="Write your review..."
+        />
+        <button
+          onClick={addTestimonial}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+        >
+          Add Review
+        </button>
+      </>
+    ) : (
+      <p className="text-gray-500 mt-2">Log in to add a review.</p>
+    )}
+  </div>
+)}
+
           </div>
         </div>
 
-        {/* RIGHT: booking card (1 col) */}
+        {/* RIGHT: Booking Card */}
         <div className="col-span-1">
           <div className="bg-white rounded-xl shadow-md p-6 sticky top-6">
-            <div>
-              <p className="text-2xl font-bold text-blue-600">₹{Number(packageData.price).toLocaleString()}</p>
-              {packageData.oldPrice && (
-                <div className="text-gray-400 line-through">₹{Number(packageData.oldPrice).toLocaleString()}</div>
-              )}
-              <div className="text-gray-500 text-sm mt-1">per person</div>
-              {packageData.oldPrice && (
-                <div className="mt-2 text-green-600 text-sm">Save ₹{(Number(packageData.oldPrice) - Number(packageData.price)).toLocaleString()}</div>
-              )}
-            </div>
+            <div className="text-2xl font-bold text-blue-600">₹{Number(packageData.price).toLocaleString()}</div>
+            {packageData.oldPrice && <div className="text-gray-400 line-through">₹{Number(packageData.oldPrice).toLocaleString()}</div>}
+            <div className="text-gray-500 text-sm mt-1">per person</div>
+            <div className="mt-2 text-green-600 text-sm">{packageData.oldPrice ? `Save ₹${(Number(packageData.oldPrice)-Number(packageData.price)).toLocaleString()}` : ""}</div>
 
-            {/* date */}
             <label className="block mt-4 text-sm font-medium">Travel Date</label>
-            <input
-              type="date"
-              value={date}
-              min={todayISO}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full border rounded-md px-3 py-2 mt-1"
-            />
+            <input type="date" min={todayISO} value={date} onChange={e=>setDate(e.target.value)} className="w-full border rounded-md px-3 py-2 mt-1" />
 
-            {/* travelers */}
             <label className="block mt-4 text-sm font-medium">Number of Travelers</label>
-            <select
-              value={travelers}
-              onChange={(e) => setTravelers(parseInt(e.target.value, 10))}
-              className="w-full border rounded-md px-3 py-2 mt-1"
-            >
-              {[1, 2, 3, 4, 5].map((n) => (
-                <option key={n} value={n}>
-                  {n} {n === 1 ? "Adult" : "Adults"}
-                </option>
-              ))}
+            <select value={travelers} onChange={e=>setTravelers(parseInt(e.target.value,10))} className="w-full border rounded-md px-3 py-2 mt-1">
+              {[1,2,3,4,5].map(n=><option key={n} value={n}>{n} {n===1?"Adult":"Adults"}</option>)}
             </select>
 
-            {/* price breakdown */}
             <div className="mt-4 text-sm text-gray-700">
               <div>Package cost: ₹{packageCost.toLocaleString()}</div>
               <div>Taxes & fees: ₹{taxes.toLocaleString()}</div>
               <div className="font-bold mt-2">Total: ₹{total.toLocaleString()}</div>
             </div>
 
-            <button
-               onClick={handleBookNow}   // <-- use the function we created
-               className="mt-6 bg-orange-500 hover:bg-orange-600 text-white w-full py-3 rounded-lg font-semibold"
-            >
-            Book Now
-            </button>
+            <button onClick={handleBookNow} className="mt-6 bg-orange-500 hover:bg-orange-600 text-white w-full py-3 rounded-lg font-semibold">Book Now</button>
+            <button onClick={()=>setIsModalOpen(true)} className="mt-3 bg-blue-500 hover:bg-blue-600 text-white w-full py-3 rounded-lg font-semibold">Customize Package</button>
+            <MultiStepModal isOpen={isModalOpen} onClose={()=>setIsModalOpen(false)} />
 
-
-            {/* ✅ Customize Package */}
-            <button
-              onClick={() => navigate("/planner")}
-              className="mt-3 bg-blue-500 hover:bg-blue-600 text-white w-full py-3 rounded-lg font-semibold"
-            >
-              Customize Package
-            </button>
-
-            {/* ✅ Save & Share */}
             <div className="flex justify-between mt-4">
-              <button
-                onClick={handleSave}
-                className="flex items-center space-x-1 text-green-600"
-              >
-                <Save className="w-5 h-5" /> <span>Save</span>
-              </button>
-              <button
-                onClick={handleShare}
-                className="flex items-center space-x-1 text-blue-600"
-              >
-                <Share2 className="w-5 h-5" /> <span>Share</span>
-              </button>
+              <button onClick={handleSave} className="flex items-center space-x-1 text-green-600"><Save className="w-5 h-5" /> <span>Save</span></button>
+              <button onClick={handleShare} className="flex items-center space-x-1 text-blue-600"><Share2 className="w-5 h-5" /> <span>Share</span></button>
             </div>
 
-            {/* WhatsApp support */}
             <div className="mt-6">
               <p className="text-gray-700 font-medium">Need Help?</p>
-              <a
-                href="https://wa.me/919876543210"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block mt-3 bg-green-500 hover:bg-green-600 text-white text-center py-2 rounded-lg"
-              >
-                WhatsApp Support
-              </a>
+              <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer" className="block mt-3 bg-green-500 hover:bg-green-600 text-white text-center py-2 rounded-lg">WhatsApp Support</a>
             </div>
           </div>
         </div>

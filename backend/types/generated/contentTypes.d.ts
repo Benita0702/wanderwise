@@ -772,9 +772,17 @@ export interface ApiTestimonialTestimonial extends Struct.CollectionTypeSchema {
         },
         number
       >;
+    tour_packages: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::tour-package.tour-package'
+    >;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    user_profiles: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::user-profile.user-profile'
+    >;
   };
 }
 
@@ -816,6 +824,10 @@ export interface ApiTourPackageTourPackage extends Struct.CollectionTypeSchema {
     publishedAt: Schema.Attribute.DateTime;
     Rating: Schema.Attribute.Decimal;
     Slug: Schema.Attribute.UID<'Title'>;
+    testimonials: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::testimonial.testimonial'
+    >;
     Title: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -856,6 +868,10 @@ export interface ApiUserProfileUserProfile extends Struct.CollectionTypeSchema {
     Preferences: Schema.Attribute.JSON;
     Profile: Schema.Attribute.Media<'images' | 'files' | 'videos' | 'audios'>;
     publishedAt: Schema.Attribute.DateTime;
+    testimonials: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::testimonial.testimonial'
+    >;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

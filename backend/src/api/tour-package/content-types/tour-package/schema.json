@@ -72,6 +72,12 @@
     },
     "Rating": {
       "type": "decimal"
+    },
+    "testimonials": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::testimonial.testimonial",
+      "mappedBy": "tour_packages"
     }
   }
 }
