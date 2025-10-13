@@ -4,12 +4,12 @@ import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
 
 function MyBookingsPage() {
-  const { packageId } = useParams();
+  const { packageId, startDate } = useParams();
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
   const [step, setStep] = useState(1);
-  const [packageData, setPackageData] = useState(null); // ✅ package info
+  const [packageData, setPackageData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [travelers, setTravelers] = useState([
@@ -28,7 +28,6 @@ function MyBookingsPage() {
     upi: "",
   });
 
-  // ✅ Fetch package from backend
   useEffect(() => {
     const fetchPackage = async () => {
       try {
@@ -45,9 +44,8 @@ function MyBookingsPage() {
     fetchPackage();
   }, [packageId]);
 
-  // ✅ Use dynamic package price (fallback if missing)
   const basePrice = packageData?.attributes?.price || 15000;
-  const taxes = Math.round(basePrice * 0.1); // 10% tax
+  const taxes = Math.round(basePrice * 0.1);
   const addonPrices = { flight: 8000, insurance: 500, car: 3000 };
 
   const calcTotal = () => {
@@ -110,7 +108,7 @@ function MyBookingsPage() {
         User_email: travelers[0].email || user?.email,
         User_name: travelers[0].fullName || user?.username,
         Travelers_count: travelers.length,
-        Start_date: new Date().toISOString().split("T")[0],
+        Start_date: startDate, // Use the startDate from the URL
         Add_ons: addons,
         Total_price: calcTotal(),
         Booking_status: "Confirmed",

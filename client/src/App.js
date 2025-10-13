@@ -104,7 +104,7 @@ function App() {
               }
             />
             <Route
-              path="/booking/:packageId"
+              path="/booking/:packageId/:startDate"
               element={
                 <ProtectedRoute>
                   <BookingPage />

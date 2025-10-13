@@ -1,55 +1,92 @@
-import { Heart } from "lucide-react";
+import React from "react";
 import { Link } from "react-router-dom";
+import { Heart, MapPin, Star } from "lucide-react";
 
-const PackageCard = ({
+function PackageCard({
   id,
   title,
   price,
-  description,
   image,
-  duration,
+  discount,
   location,
+  duration,
+  rating,
   isWishlisted,
   toggleWishlist,
-}) => {
+  selectedDate,
+  onDateChange
+}) {
+  const today = new Date().toISOString().split("T")[0];
+
   return (
-    <div className="bg-white shadow-md rounded-2xl overflow-hidden hover:shadow-lg transition">
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden flex flex-col">
       <div className="relative">
-        <img src={image} alt={title} className="w-full h-48 object-cover" />
+        <img
+          src={image}
+          alt={title}
+          className="w-full h-48 object-cover"
+        />
         <button
-          onClick={() =>
-            toggleWishlist({ id, title, price, description, image, duration, location })
-          }
-          className="absolute top-3 right-3 bg-white rounded-full p-2 shadow hover:scale-110 transition"
+          onClick={() => toggleWishlist({ id, title, price, image })}
+          className="absolute top-2 right-2 p-2 rounded-full bg-white/80 hover:bg-white"
         >
           <Heart
-            className={`h-5 w-5 ${
-              isWishlisted ? "text-red-500 fill-red-500" : "text-gray-400"
+            className={`w-6 h-6 ${
+              isWishlisted ? "text-red-500 fill-current" : "text-gray-700"
             }`}
           />
         </button>
       </div>
 
-      <div className="p-4">
-        <h3 className="font-semibold text-lg">{title}</h3>
-        <p className="text-sm text-gray-600 line-clamp-2">{description}</p>
-        <div className="flex justify-between items-center mt-3">
-          <span className="text-blue-600 font-bold">₹{price}</span>
-          <span className="text-gray-500 text-sm">{duration} Days</span>
+      <div className="p-4 flex flex-col flex-grow">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-sm text-gray-500 flex items-center">
+            <MapPin className="w-4 h-4 mr-1" /> {location}
+          </span>
+          <span className="text-sm font-semibold flex items-center">
+            <Star className="w-4 h-4 mr-1 text-yellow-500" /> {rating}
+          </span>
+        </div>
+        <h3 className="text-lg font-bold text-gray-800 mb-2 flex-grow">
+          {title}
+        </h3>
+        <p className="text-sm text-gray-600 mb-4">{duration} Days Tour</p>
+
+        {/* ✅ Date Picker */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Select Start Date
+          </label>
+          <input
+            type="date"
+            value={selectedDate || today}
+            onChange={(e) => onDateChange(id, e.target.value)}
+            min={today}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
-        {/* View Details */}
-        <div className="mt-4">
+        <div className="flex justify-between items-center mt-auto">
+          <div>
+            {discount && (
+              <span className="text-sm text-gray-500 line-through mr-2">
+                ₹{discount.toLocaleString()}
+              </span>
+            )}
+            <span className="text-xl font-bold text-gray-900">
+              ₹{price.toLocaleString()}
+            </span>
+          </div>
           <Link
-            to={`/packages/${id}`}
-            className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+            to={`/booking/${id}/${selectedDate || today}`}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            View Details
+            Book Now
           </Link>
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default PackageCard;

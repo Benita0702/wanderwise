@@ -22,6 +22,24 @@ module.exports = (plugin) => {
     return response;
   };
 
+  plugin.controllers.user.find = async (ctx) => {
+    const user = await strapi.entityService.findOne(
+      'plugin::users-permissions.user',
+      ctx.state.user.id,
+      {
+        populate: {
+          user_profile: {
+            populate: {
+              Profile: true,
+            },
+          },
+        },
+      }
+    );
+
+    return user;
+  };
+
   // Add custom change-password route
   plugin.routes["content-api"].routes.push({
     method: "POST",
