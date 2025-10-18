@@ -1,7 +1,7 @@
 import { useContext, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { Menu, X, User, Search } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
@@ -55,12 +55,8 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Right Side (Search + User) */}
+          {/* User Menu */}
           <div className="hidden md:flex items-center space-x-4">
-            <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-lg">
-              <Search className="h-5 w-5" />
-            </button>
-
             {!user ? (
               <Link
                 to="/login"
@@ -71,7 +67,8 @@ export default function Navbar() {
             ) : (
               <div className="relative">
                 <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  onMouseEnter={() => setIsUserMenuOpen(true)}
+                  onMouseLeave={() => setIsUserMenuOpen(false)}
                   className="flex items-center space-x-2 p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-lg"
                 >
                   <User className="h-5 w-5" />
@@ -85,6 +82,8 @@ export default function Navbar() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1"
+                      onMouseEnter={() => setIsUserMenuOpen(true)}
+                      onMouseLeave={() => setIsUserMenuOpen(false)}
                     >
                       <Link
                         to="/my-profile"
@@ -92,14 +91,12 @@ export default function Navbar() {
                       >
                         My Profile
                       </Link>
-
                       <Link
                         to="/my-bookings"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         My Bookings
                       </Link>
-
                       <Link
                         to="/itineraries"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

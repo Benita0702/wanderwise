@@ -1,12 +1,12 @@
 /* eslint-disable no-unused-vars */
 import React, { useState, useContext } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Calendar as CalendarIcon, Users, Settings, Save, Share, Download, ShoppingCart } from "lucide-react";
+import { MapPin, Calendar as CalendarIcon, Users, Settings, Save, Share, Download } from "lucide-react";
 import { jsPDF } from "jspdf";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
-import { getAISuggestions } from "../api/ai";
+// import { getAISuggestions } from "../api/ai"; // Not connected; we will use demo data
 
 export default function PlannerPage() {
   const { user, token } = useContext(AuthContext);
@@ -91,31 +91,34 @@ export default function PlannerPage() {
     setCustomInputs({ ...customInputs, [dayIndex]: "" });
   };
 
-  const generateAISuggestions = async () => {
+  // Demo AI suggestions (randomized per day)
+  const aiOptions = {
+    Adventure: ["River Rafting", "Hiking", "Ziplining", "Rock Climbing", "Paragliding"],
+    Relaxation: ["Beach Lounging", "Spa Session", "Yoga Class", "Meditation", "Sunset Walk"],
+    Culture: ["Museum Visit", "Local Market Tour", "Historical Site", "Art Gallery", "Cultural Show"],
+    Food: ["Street Food Tour", "Cooking Class", "Wine Tasting", "Local Restaurant", "Food Festival"],
+    Luxury: ["Luxury Resort Stay", "Private Yacht", "Fine Dining", "Helicopter Tour", "Exclusive Event"],
+    Budget: ["Budget Hotel", "Free Walking Tour", "Local Street Food", "Public Transport Tour", "Market Shopping"]
+  };
+
+  const generateAISuggestions = () => {
     if (!plannerData.destinations[0] || !plannerData.budget) return alert("Enter destination and budget");
 
-    try {
-      const totalDays =
-        Math.ceil((new Date(plannerData.endDate) - new Date(plannerData.startDate)) / (1000 * 60 * 60 * 24)) + 1;
+    const updatedItinerary = itinerary.map((day) => {
+      const dayActivities = [];
 
-      const suggestions = await getAISuggestions(
-        plannerData.destinations[0],
-        plannerData.preferences,
-        totalDays,
-        plannerData.budget
-      );
-
-      const updatedItinerary = itinerary.map((day) => {
-        const daySug = suggestions.find((s) => s.day === day.day);
-        return daySug ? { ...day, activities: daySug.activities.map((a) => ({ activity: a, type: "AI" })) } : day;
+      plannerData.preferences.forEach((pref) => {
+        const options = aiOptions[pref] || [];
+        // pick random 1-2 activities per preference
+        const shuffled = options.sort(() => 0.5 - Math.random());
+        dayActivities.push(...shuffled.slice(0, 1));
       });
 
-      setItinerary(updatedItinerary);
-      setAiGenerated(true);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to generate AI suggestions");
-    }
+      return { ...day, activities: dayActivities.map((a) => ({ activity: a, type: "AI" })) };
+    });
+
+    setItinerary(updatedItinerary);
+    setAiGenerated(true);
   };
 
   const exportPDF = () => {
@@ -127,7 +130,10 @@ export default function PlannerPage() {
     doc.text(`Dates: ${plannerData.startDate} to ${plannerData.endDate}`, 14, 36);
     doc.text(`Traveler Type: ${plannerData.travelerType}`, 14, 42);
     doc.text(`Preferences: ${plannerData.preferences.join(", ") || "None"}`, 14, 48);
-    doc.text(`Budget: ₹${plannerData.budget}`, 14, 54);
+
+    const budgetValue = Number(plannerData.budget) || 0;
+    doc.text(`Budget: ₹${budgetValue.toLocaleString("en-IN")}`, 14, 54);
+
     let y = 60;
     itinerary.forEach((day) => {
       doc.text(`Day ${day.day}:`, 14, y);
@@ -136,12 +142,13 @@ export default function PlannerPage() {
         doc.text("No activities selected for this day.", 16, y);
         y += 6;
       } else {
-        day.activities.forEach((act) => {
-          doc.text(`- ${act.activity} (${act.type})`, 16, y);
-          y += 6;
-        });
+        // activities as comma separated
+        const activityLine = day.activities.map((act) => `${act.activity} (${act.type})`).join(", ");
+        doc.text(`- ${activityLine}`, 16, y);
+        y += 8;
       }
     });
+
     doc.save(`${plannerData.destinations[0] || "itinerary"}_itinerary.pdf`);
   };
 
@@ -183,11 +190,6 @@ export default function PlannerPage() {
     }
   };
 
-  const handleBookNow = () => {
-    if (!user || !token) return navigate("/login");
-    alert(`Booking started for ${plannerData.destinations[0]}! (Integrate payment gateway here)`);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -199,7 +201,7 @@ export default function PlannerPage() {
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
             AI-Powered Itinerary Planner
           </h1>
-          <p className="text-xl text-gray-600">Plan, save, share, and book your perfect trip</p>
+          <p className="text-xl text-gray-600">Plan, save, share your perfect trip</p>
         </motion.div>
 
         {/* Stepper */}
@@ -238,6 +240,7 @@ export default function PlannerPage() {
           {/* Step 1: Destination, Dates, Budget */}
           {currentStep === 1 && (
             <div className="space-y-4">
+              <label className="font-semibold">Destination</label>
               <input
                 type="text"
                 value={plannerData.destinations[0]}
@@ -247,15 +250,17 @@ export default function PlannerPage() {
                 placeholder="Enter destination"
                 className="w-full p-3 border rounded-lg"
               />
+              <label className="font-semibold">Budget (₹)</label>
               <input
                 type="number"
                 value={plannerData.budget}
                 onChange={(e) =>
                   setPlannerData((prev) => ({ ...prev, budget: e.target.value }))
                 }
-                placeholder="Enter budget (₹)"
+                placeholder="Enter budget"
                 className="w-full p-3 border rounded-lg"
               />
+              <label className="font-semibold">Start Date</label>
               <input
                 type="date"
                 value={plannerData.startDate}
@@ -264,6 +269,7 @@ export default function PlannerPage() {
                 }
                 className="w-full p-3 border rounded-lg"
               />
+              <label className="font-semibold">End Date</label>
               <input
                 type="date"
                 value={plannerData.endDate}
@@ -321,6 +327,14 @@ export default function PlannerPage() {
           {/* Step 4: Itinerary */}
           {currentStep === 4 && (
             <div className="space-y-6">
+              <div className="bg-gray-100 p-4 rounded-lg space-y-2">
+                <div><strong>Destination:</strong> {plannerData.destinations[0]}</div>
+                <div><strong>Dates:</strong> {plannerData.startDate} to {plannerData.endDate}</div>
+                <div><strong>Traveler Type:</strong> {plannerData.travelerType}</div>
+                <div><strong>Preferences:</strong> {plannerData.preferences.join(", ") || "None"}</div>
+                <div><strong>Budget:</strong> ₹{Number(plannerData.budget).toLocaleString("en-IN")}</div>
+              </div>
+
               <button
                 onClick={generateAISuggestions}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg"
@@ -337,9 +351,7 @@ export default function PlannerPage() {
                   {day.activities.length === 0 ? (
                     <div className="text-gray-500">No activities yet</div>
                   ) : (
-                    day.activities.map((act, i) => (
-                      <div key={i}>- {act.activity} ({act.type})</div>
-                    ))
+                    <div>{day.activities.map((act) => act.activity + ` (${act.type})`).join(", ")}</div>
                   )}
                   <div className="flex gap-2 mt-2">
                     <input
@@ -377,12 +389,6 @@ export default function PlannerPage() {
                   className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center gap-1"
                 >
                   <Share className="w-4 h-4" /> Share
-                </button>
-                <button
-                  onClick={handleBookNow}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg flex items-center gap-1"
-                >
-                  <ShoppingCart className="w-4 h-4" /> Book Now
                 </button>
               </div>
             </div>

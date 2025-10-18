@@ -35,8 +35,9 @@
     },
     "tour_packages": {
       "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::tour-package.tour-package"
+      "relation": "manyToMany",
+      "target": "api::tour-package.tour-package",
+      "mappedBy": "offers"
     },
     "slug": {
       "type": "uid"

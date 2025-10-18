@@ -8,6 +8,7 @@ function BookingPage() {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
 
+
   const [step, setStep] = useState(1);
   const [packageData, setPackageData] = useState(null); // Flat package info from Strapi
 

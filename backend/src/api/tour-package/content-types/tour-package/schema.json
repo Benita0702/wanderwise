@@ -78,6 +78,12 @@
       "relation": "manyToMany",
       "target": "api::testimonial.testimonial",
       "mappedBy": "tour_packages"
+    },
+    "offers": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::offer.offer",
+      "inversedBy": "tour_packages"
     }
   }
 }

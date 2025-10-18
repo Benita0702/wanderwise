@@ -15,6 +15,7 @@ export default function ChatbotButton() {
         "Best places to visit in Rajasthan",
         "Budget trip under ₹20,000",
         "Honeymoon destinations in India",
+        "Manali ₹15,000", // ✅ New demo option
       ],
     },
   ]);
@@ -27,8 +28,31 @@ export default function ChatbotButton() {
     const userMessage = { sender: "user", text: text.trim() };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
-    setLoading(true);
 
+    // ✅ Handle Demo Trip (no API call)
+    if (text.toLowerCase().includes("manali")) {
+      const demoReply = {
+        sender: "bot",
+        text: `🏔️ **Manali 3N/4D Trip (₹15,000 per person)**  
+        
+**Inclusions:**
+• 3 nights stay in a 3⭐ hotel  
+• Daily breakfast & dinner  
+• Solang Valley & Rohtang Pass sightseeing  
+• Volvo bus from Delhi & local transfers  
+
+**Highlights:**
+- Visit Hidimba Temple, Old Manali Café Street  
+- Enjoy snow adventure at Solang Valley  
+- Evening bonfire at hotel  
+
+**Contact us to customize this trip!**`,
+      };
+      setMessages((prev) => [...prev, demoReply]);
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await axios.post("http://localhost:1337/api/chatbot", { message: text.trim() });
 
@@ -86,8 +110,10 @@ export default function ChatbotButton() {
                   className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`p-3 rounded-lg max-w-xs ${
-                      msg.sender === "user" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"
+                    className={`p-3 rounded-lg max-w-xs whitespace-pre-wrap ${
+                      msg.sender === "user"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-800"
                     }`}
                   >
                     <p>{msg.text}</p>
@@ -106,7 +132,7 @@ export default function ChatbotButton() {
                     )}
                   </div>
                 </div>
-              ))} 
+              ))}
 
               {loading && <p className="text-gray-500 text-sm">Bot is typing...</p>}
             </div>

@@ -1,11 +1,10 @@
 // src/components/profile/MyProfile.js
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
 export default function MyProfile() {
   const { token } = useAuth();
   const [profile, setProfile] = useState(null);
-  const [userId, setUserId] = useState(null);
   const [form, setForm] = useState({
     FullName: "",
     Phone: "",
@@ -15,89 +14,64 @@ export default function MyProfile() {
   });
   const [profileImage, setProfileImage] = useState(null);
   const [preview, setPreview] = useState(null);
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const populateForm = useCallback((profileData) => {
-    if (!profileData) return;
-
-    // Handle Strapi rich-text JSON for Address
-    let addressText = "";
-    if (Array.isArray(profileData.Address)) {
-      addressText = profileData.Address.map((block) =>
-        block.children.map((child) => child.text).join("")
-      ).join("\n");
-    } else {
-      addressText = profileData.Address || "";
-    }
-
-    setForm({
-      FullName: profileData.FullName || "",
-      Phone: profileData.Phone || "",
-      Address: addressText,
-      Birthday: profileData.Birthday || "",
-      Gender: profileData.Gender || "",
-    });
-
-    if (profileData.Profile?.data) {
-      setPreview(
-        "http://localhost:1337" +
-        profileData.Profile.data.attributes.url
-      );
-    } else {
-      setPreview(null);
-    }
-  }, []);
-
+  // ✅ Load user profile from Strapi
   useEffect(() => {
-    if (!token) {
-      setIsLoading(false);
-      return;
-    }
+    if (!token) return;
 
-    const loadProfile = async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch(
-          "http://localhost:1337/api/users/me?populate=user_profile.Profile",
-          {
-            headers: { Authorization: `Bearer ${token}` },
+    fetch(`http://localhost:1337/api/users/me?populate=user_profile.Profile`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.user_profile) {
+          const profileData = data.user_profile;
+          setProfile(profileData);
+
+          // Handle Strapi rich-text JSON for Address
+          let addressText = "";
+          if (Array.isArray(profileData.Address)) {
+            addressText = profileData.Address.map((block) =>
+              block.children.map((child) => child.text).join("")
+            ).join("\n");
+          } else {
+            addressText = profileData.Address || "";
           }
-        );
 
-        if (!res.ok) throw new Error(`HTTP error! ${res.status}`);
+          setForm({
+            FullName: profileData.FullName || "",
+            Phone: profileData.Phone || "",
+            Address: addressText,
+            Birthday: profileData.Birthday || "",
+            Gender: profileData.Gender || "",
+          });
 
-        const data = await res.json();
-        setUserId(data.id);
-
-        if (data.user_profile) {
-          setProfile(data.user_profile);
-          populateForm(data.user_profile);
+          if (profileData.Profile) {
+            setPreview("http://localhost:1337" + profileData.Profile.url);
+          }
         }
-      } catch (err) {
-        console.error("Error loading profile:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      })
+      .catch((err) => console.error("Error loading profile:", err));
+  }, [token]);
 
-    loadProfile();
-  }, [token, populateForm]);
-
+  // ✅ Handle text input change
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // ✅ Handle image change
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setProfileImage(file);
-      setPreview(URL.createObjectURL(file));
-    }
+    setProfileImage(file);
+    setPreview(URL.createObjectURL(file));
   };
 
+  // ✅ Upload image to Strapi
   const uploadImage = async (file) => {
     const formData = new FormData();
     formData.append("files", file);
@@ -108,106 +82,95 @@ export default function MyProfile() {
       body: formData,
     });
 
-    if (!res.ok) {
-      console.error("Image upload failed");
-      return null;
-    }
-
     const data = await res.json();
-    return data[0]?.id || null;
+    if (data[0]) return data[0].id;
+    return null;
   };
 
+  // ✅ Save profile
   const handleSave = async () => {
-    let imageId = profile?.Profile?.data?.id || null;
+    if (!profile) return;
+
+    let imageId = profile.Profile?.id || null;
     if (profileImage) {
       imageId = await uploadImage(profileImage);
     }
 
-    const dataToSave = { ...form, Profile: imageId };
-
-    const url = profile
-      ? `http://localhost:1337/api/user-profiles/${profile.id}`
-      : `http://localhost:1337/api/user-profiles`;
-
-    const method = profile ? "PUT" : "POST";
-
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ data: dataToSave }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error?.message || "Failed to save profile");
-      }
-
-      const updated = await res.json();
-
-      if (updated.data) {
-        const newProfile = { id: updated.data.id, ...updated.data.attributes };
-        setProfile(newProfile);
-        populateForm(newProfile);
-        setIsEditing(false);
-        alert("Profile updated successfully!");
-      }
-
-    } catch (err) {
-      console.error("Error saving profile:", err);
-      alert(`An error occurred: ${err.message}`);
-    }
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    populateForm(profile); // Revert changes by re-populating the form with original data
-  };
-
-  const handleChangePassword = async () => {
-    if (newPassword.length < 6) {
-      alert("New password must be at least 6 characters long.");
-      return;
-    }
-
-    try {
-      const res = await fetch("http://localhost:1337/api/auth/change-password", {
-        method: "POST",
+    const res = await fetch(
+      `http://localhost:1337/api/user-profiles/${profile.id}`,
+      {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          currentPassword,
-          password: newPassword,
-          passwordConfirmation: newPassword,
+          data: {
+            ...form,
+            Profile: imageId ? imageId : null,
+          },
         }),
-      });
-
-      if (res.ok) {
-        alert("Password updated successfully!");
-        setCurrentPassword("");
-        setNewPassword("");
-      } else {
-        const error = await res.json();
-        throw new Error(error.error?.message || "Failed to update password");
       }
-    } catch (err) {
-      alert("Error: " + err.message);
+    );
+
+    const updated = await res.json();
+    console.log("Profile updated:", updated);
+
+    if (updated?.data?.attributes?.Profile) {
+      setPreview("http://localhost:1337" + updated.data.attributes.Profile.url);
     }
+
+    setIsEditing(false);
+    alert("Profile updated successfully!");
   };
 
-  if (isLoading) {
-    return <div className="max-w-2xl mx-auto p-6 text-center">Loading profile...</div>;
-  }
+  // ✅ Cancel editing
+  const handleCancel = () => {
+    if (profile) {
+      setForm({
+        FullName: profile.FullName || "",
+        Phone: profile.Phone || "",
+        Address: profile.Address || "",
+        Birthday: profile.Birthday || "",
+        Gender: profile.Gender || "",
+      });
+      if (profile.Profile) {
+        setPreview("http://localhost:1337" + profile.Profile.url);
+      }
+    }
+    setIsEditing(false);
+  };
+
+  // ✅ Change password
+  const handleChangePassword = async () => {
+    const res = await fetch("http://localhost:1337/api/auth/change-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        currentPassword,
+        password: newPassword,
+        passwordConfirmation: newPassword,
+      }),
+    });
+
+    if (res.ok) {
+      alert("Password updated successfully!");
+      setCurrentPassword("");
+      setNewPassword("");
+    } else {
+      const error = await res.json();
+      alert("Error: " + (error.error?.message || "Failed to update password"));
+    }
+  };
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow rounded-lg">
       <h2 className="text-xl font-bold mb-4">My Profile</h2>
 
+      {/* Profile Image */}
       <div className="mb-4 text-center">
         {preview ? (
           <img
@@ -230,6 +193,7 @@ export default function MyProfile() {
         )}
       </div>
 
+      {/* Profile Fields */}
       <div className="space-y-3">
         <input
           type="text"
@@ -279,6 +243,7 @@ export default function MyProfile() {
         </select>
       </div>
 
+      {/* Buttons */}
       {!isEditing ? (
         <button
           onClick={() => setIsEditing(true)}
@@ -303,6 +268,7 @@ export default function MyProfile() {
         </div>
       )}
 
+      {/* Change Password */}
       <div className="mt-6">
         <h3 className="font-semibold mb-2">Change Password</h3>
         <input
